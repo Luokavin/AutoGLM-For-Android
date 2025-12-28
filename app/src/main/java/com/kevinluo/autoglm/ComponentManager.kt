@@ -21,7 +21,6 @@ import com.kevinluo.autoglm.screenshot.ScreenshotService
 import com.kevinluo.autoglm.settings.SettingsManager
 import com.kevinluo.autoglm.ui.FloatingWindowService
 import com.kevinluo.autoglm.util.HumanizedSwipeGenerator
-import com.kevinluo.autoglm.util.Logger
 
 /**
  * Centralized component manager for dependency injection and lifecycle management.
@@ -95,10 +94,18 @@ class ComponentManager private constructor(private val context: Context) {
     private var _swipeGenerator: HumanizedSwipeGenerator? = null
 
     /**
-     * Checks if the UserService is connected.
+     * Checks if the device controller is ready.
+     * For Shizuku mode: checks if Shizuku service is connected
+     * For Accessibility mode: checks if PhoneAgent is initialized
      */
     val isServiceConnected: Boolean
-        get() = userService != null
+        get() {
+            val controlMode = settingsManager.getDeviceControlMode()
+            return when (controlMode) {
+                DeviceControlMode.SHIZUKU -> userService != null
+                DeviceControlMode.ACCESSIBILITY -> _phoneAgent != null
+            }
+        }
 
     /**
      * Gets the DeviceExecutor instance.

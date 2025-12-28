@@ -211,6 +211,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         updateKeyboardStatus()
         updateAccessibilityStatus()
         updateTaskStatus(TaskStatus.IDLE)
+        updateTaskButtonStates()
     }
 
     /**
@@ -381,8 +382,8 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
             }
             componentManager.setPhoneAgentListener(this)
             setupConfirmationCallback()
-            updateTaskButtonStates()
         }
+        updateTaskButtonStates()
     }
 
     override fun onDestroy() {
