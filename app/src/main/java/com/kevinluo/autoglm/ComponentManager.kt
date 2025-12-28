@@ -221,7 +221,11 @@ class ComponentManager private constructor(private val context: Context) {
 
         // Create ScreenshotService with floating window controller provider
         // Use a provider function so it can get the current instance dynamically
-        _screenshotService = ScreenshotService(service) { FloatingWindowService.getInstance() }
+        _screenshotService = ScreenshotService(
+            userService = service,
+            screenshotProvider = null,  // For Shizuku mode, use shell commands
+            floatingWindowControllerProvider = { FloatingWindowService.getInstance() }
+        )
 
         // Create ActionHandler with floating window provider to hide window during touch operations
         _actionHandler = ActionHandler(
@@ -266,8 +270,13 @@ class ComponentManager private constructor(private val context: Context) {
         // Create TextInputManager with stub service (won't be actually used)
         _textInputManager = TextInputManager(stubUserService)
 
-        // Create ScreenshotService for accessibility mode
-        _screenshotService = ScreenshotService(stubUserService) { FloatingWindowService.getInstance() }
+        // Create ScreenshotService for accessibility mode with proper screenshotProvider
+        // The screenshotProvider delegates to AccessibilityDeviceController for screenshots
+        _screenshotService = ScreenshotService(
+            userService = null,  // No userService needed in accessibility mode
+            screenshotProvider = { _deviceController!!.captureScreen() },
+            floatingWindowControllerProvider = { FloatingWindowService.getInstance() }
+        )
 
         // Create ActionHandler for accessibility mode
         // The DeviceExecutor and TextInputManager instances exist but their actual methods

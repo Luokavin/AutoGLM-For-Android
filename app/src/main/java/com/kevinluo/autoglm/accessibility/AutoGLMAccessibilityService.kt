@@ -103,8 +103,8 @@ class AutoGLMAccessibilityService : AccessibilityService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             try {
                 takeScreenshot(/* displayId= */ 0, /* executor= */ mainExecutor,
-                    object : android.accessibilityservice.AccessibilityService.TakeScreenshotCallback {
-                        override fun onSuccess(screenshot: android.accessibilityservice.AccessibilityService.ScreenshotResult) {
+                    object : TakeScreenshotCallback {
+                        override fun onSuccess(screenshot: ScreenshotResult) {
                             try {
                                 val hardwareBuffer = screenshot.hardwareBuffer
                                 val bitmap = Bitmap.wrapHardwareBuffer(hardwareBuffer, screenshot.colorSpace)
