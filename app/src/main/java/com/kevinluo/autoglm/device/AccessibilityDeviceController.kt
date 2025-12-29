@@ -262,11 +262,18 @@ class AccessibilityDeviceController(
      */
     private fun encodeBitmapToBase64(
         bitmap: Bitmap,
-        format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSY,
+        format: Bitmap.CompressFormat? = null,
         quality: Int = 80
     ): String {
+        val compressFormat = format ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Bitmap.CompressFormat.WEBP_LOSSY
+        } else {
+            @Suppress("DEPRECATION")
+            Bitmap.CompressFormat.WEBP
+        }
+
         val outputStream = ByteArrayOutputStream()
-        bitmap.compress(format, quality, outputStream)
+        bitmap.compress(compressFormat, quality, outputStream)
         return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
     }
 

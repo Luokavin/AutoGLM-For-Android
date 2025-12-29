@@ -50,28 +50,28 @@ import java.util.Locale
  *
  */
 class HistoryDetailActivity : AppCompatActivity() {
-    
+
     private lateinit var historyManager: HistoryManager
     private var taskId: String? = null
     private var task: TaskHistory? = null
-    
+
     private lateinit var contentRecyclerView: RecyclerView
     private lateinit var detailAdapter: HistoryDetailAdapter
-    
+
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_history_detail)
-        
+
         historyManager = HistoryManager.getInstance(this)
         taskId = intent.getStringExtra(EXTRA_TASK_ID)
-        
+
         Logger.d(TAG, "HistoryDetailActivity created for task: $taskId")
         setupViews()
         loadTask()
     }
-    
+
     /**
      * Sets up all view references and click listeners.
      */
@@ -79,23 +79,23 @@ class HistoryDetailActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.backBtn).setOnClickListener {
             finish()
         }
-        
+
         findViewById<ImageButton>(R.id.copyPromptBtn).setOnClickListener {
             copyPromptToClipboard()
         }
-        
+
         findViewById<ImageButton>(R.id.saveImageBtn).setOnClickListener {
             saveAsImage()
         }
-        
+
         findViewById<ImageButton>(R.id.shareBtn).setOnClickListener {
             shareAsImage()
         }
-        
+
         findViewById<ImageButton>(R.id.deleteBtn).setOnClickListener {
             showDeleteDialog()
         }
-        
+
         // Setup RecyclerView with true recycling
         contentRecyclerView = findViewById(R.id.contentRecyclerView)
         detailAdapter = HistoryDetailAdapter(historyManager, lifecycleScope)
@@ -107,27 +107,27 @@ class HistoryDetailActivity : AppCompatActivity() {
             setItemViewCacheSize(3)
         }
     }
-    
+
     /**
      * Loads the task from history manager.
      */
     private fun loadTask() {
         val id = taskId ?: return
-        
+
         lifecycleScope.launch {
             task = historyManager.getTask(id)
-            task?.let { 
+            task?.let {
                 Logger.d(TAG, "Loaded task with ${it.stepCount} steps")
-                detailAdapter.setTask(it) 
+                detailAdapter.setTask(it)
             }
         }
     }
-    
+
     override fun onDestroy() {
         super.onDestroy()
         detailAdapter.cleanup()
     }
-    
+
     /**
      * Shows a confirmation dialog for deleting the task.
      */
@@ -140,22 +140,22 @@ class HistoryDetailActivity : AppCompatActivity() {
             .setNegativeButton(R.string.dialog_cancel, null)
             .show()
     }
-    
+
     /**
      * Copies the task prompt/description to clipboard.
      *
      */
     private fun copyPromptToClipboard() {
         val currentTask = task ?: return
-        
+
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("AutoGLM Prompt", currentTask.taskDescription)
         clipboard.setPrimaryClip(clip)
-        
+
         Logger.d(TAG, "Copied prompt to clipboard")
         Toast.makeText(this, R.string.history_prompt_copied, Toast.LENGTH_SHORT).show()
     }
-    
+
     /**
      * Deletes the current task from history.
      */
@@ -167,7 +167,7 @@ class HistoryDetailActivity : AppCompatActivity() {
             finish()
         }
     }
-    
+
     /**
      * Formats duration in milliseconds to a human-readable string.
      *
@@ -182,7 +182,7 @@ class HistoryDetailActivity : AppCompatActivity() {
             else -> "${seconds / 3600}时${(seconds % 3600) / 60}分"
         }
     }
-    
+
     /**
      * Saves the task history as an image to gallery.
      *
@@ -191,22 +191,22 @@ class HistoryDetailActivity : AppCompatActivity() {
      */
     private fun saveAsImage() {
         val currentTask = task ?: return
-        
+
         Logger.d(TAG, "Saving task as image")
         Toast.makeText(this, R.string.history_generating_image, Toast.LENGTH_SHORT).show()
-        
+
         lifecycleScope.launch {
             try {
                 val bitmap = withContext(Dispatchers.Default) {
                     generateShareImage(currentTask)
                 }
-                
+
                 val saved = withContext(Dispatchers.IO) {
                     saveBitmapToGallery(bitmap)
                 }
-                
+
                 bitmap.recycle()
-                
+
                 if (saved) {
                     Logger.d(TAG, "Image saved to gallery")
                     Toast.makeText(this@HistoryDetailActivity, R.string.history_save_success, Toast.LENGTH_SHORT).show()
@@ -220,7 +220,7 @@ class HistoryDetailActivity : AppCompatActivity() {
             }
         }
     }
-    
+
     /**
      * Shares the task history as an image.
      *
@@ -229,24 +229,24 @@ class HistoryDetailActivity : AppCompatActivity() {
      */
     private fun shareAsImage() {
         val currentTask = task ?: return
-        
+
         Logger.d(TAG, "Sharing task as image")
         Toast.makeText(this, R.string.history_generating_image, Toast.LENGTH_SHORT).show()
-        
+
         lifecycleScope.launch {
             try {
                 val bitmap = withContext(Dispatchers.Default) {
                     generateShareImage(currentTask)
                 }
-                
+
                 // Save bitmap to cache directory
                 val file = withContext(Dispatchers.IO) {
                     saveBitmapToCache(bitmap)
                 }
-                
+
                 // Share the image
                 shareImageFile(file)
-                
+
                 // Recycle bitmap
                 bitmap.recycle()
             } catch (e: Exception) {
@@ -255,7 +255,7 @@ class HistoryDetailActivity : AppCompatActivity() {
             }
         }
     }
-    
+
     /**
      * Generates a share image from task history.
      *
@@ -270,16 +270,16 @@ class HistoryDetailActivity : AppCompatActivity() {
         val contentWidth = width - padding * 2
         val stepSpacing = 40  // Spacing between steps
         val screenshotWidthRatio = 0.8f  // Screenshot width = 80% of image width
-        
+
         // Calculate heights
         val headerHeight = 200
         val stepBaseHeight = 120
         val thinkingLineHeight = 50
-        
+
         // First pass: calculate total height (need to load screenshots to get their heights)
         var totalHeight = headerHeight + padding * 2
         val screenshotHeights = mutableMapOf<Int, Int>()
-        
+
         for ((index, step) in task.steps.withIndex()) {
             totalHeight += stepBaseHeight
             if (step.thinking.isNotBlank()) {
@@ -301,52 +301,52 @@ class HistoryDetailActivity : AppCompatActivity() {
             totalHeight += stepSpacing
         }
         totalHeight += 80 // footer
-        
+
         // Create bitmap
         val bitmap = Bitmap.createBitmap(width, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        
+
         // Background
         canvas.drawColor(Color.parseColor("#1A1A1A"))
-        
+
         // Paints
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textSize = 48f
             typeface = Typeface.DEFAULT_BOLD
         }
-        
+
         val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#AAAAAA")
             textSize = 32f
         }
-        
+
         val stepNumberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#4CAF50")
             textSize = 36f
             typeface = Typeface.DEFAULT_BOLD
         }
-        
+
         val actionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textSize = 34f
         }
-        
+
         val thinkingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#888888")
             textSize = 28f
         }
-        
+
         val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#2A2A2A")
         }
-        
+
         var y = padding.toFloat()
-        
+
         // Draw header
         canvas.drawText("AutoGLM 任务记录", padding.toFloat(), y + 50, titlePaint)
         y += 70
-        
+
         // Task description
         val descLines = wrapText(task.taskDescription, actionPaint, contentWidth.toFloat())
         for (line in descLines) {
@@ -354,18 +354,18 @@ class HistoryDetailActivity : AppCompatActivity() {
             y += 45
         }
         y += 20
-        
+
         // Status and info
         val statusColor = if (task.success) Color.parseColor("#4CAF50") else Color.parseColor("#F44336")
         val statusPaint = Paint(subtitlePaint).apply { color = statusColor }
         val statusText = if (task.success) "✓ 成功" else "✗ 失败"
         canvas.drawText(statusText, padding.toFloat(), y + 35, statusPaint)
-        
+
         val duration = formatDuration(task.duration)
         val infoStr = "${dateFormat.format(Date(task.startTime))} · ${task.stepCount}步 · $duration"
         canvas.drawText(infoStr, padding + 150f, y + 35, subtitlePaint)
         y += 60
-        
+
         // Draw steps
         for ((index, step) in task.steps.withIndex()) {
             // Add spacing before each step (except first one uses smaller spacing)
@@ -374,7 +374,7 @@ class HistoryDetailActivity : AppCompatActivity() {
             } else {
                 y += stepSpacing
             }
-            
+
             // Step card background
             val cardTop = y
             var cardHeight = stepBaseHeight.toFloat()
@@ -385,32 +385,32 @@ class HistoryDetailActivity : AppCompatActivity() {
             screenshotHeights[index]?.let { h ->
                 cardHeight += h + 40
             }
-            
+
             canvas.drawRoundRect(
                 padding.toFloat(), cardTop,
                 (width - padding).toFloat(), cardTop + cardHeight,
                 20f, 20f, cardPaint
             )
-            
+
             y += 15
-            
+
             // Step number
             canvas.drawText("步骤 ${step.stepNumber}", padding + 20f, y + 40, stepNumberPaint)
-            
+
             // Status indicator
             val stepStatusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = if (step.success) Color.parseColor("#4CAF50") else Color.parseColor("#F44336")
             }
             canvas.drawCircle(width - padding - 30f, y + 25, 10f, stepStatusPaint)
             y += 50
-            
+
             // Action description
             val actionLines = wrapText(step.actionDescription, actionPaint, contentWidth - 40f)
             for (line in actionLines) {
                 canvas.drawText(line, padding + 20f, y + 30, actionPaint)
                 y += 40
             }
-            
+
             // Thinking
             if (step.thinking.isNotBlank()) {
                 y += 10
@@ -420,7 +420,7 @@ class HistoryDetailActivity : AppCompatActivity() {
                     y += 35
                 }
             }
-            
+
             // Screenshot
             val screenshotPath = step.annotatedScreenshotPath ?: step.screenshotPath
             if (screenshotPath != null) {
@@ -432,29 +432,29 @@ class HistoryDetailActivity : AppCompatActivity() {
                     val scale = targetWidth.toFloat() / screenshotBitmap.width
                     val scaledWidth = targetWidth
                     val scaledHeight = (screenshotBitmap.height * scale).toInt()
-                    
+
                     val scaledBitmap = Bitmap.createScaledBitmap(screenshotBitmap, scaledWidth, scaledHeight, true)
                     val left = (width - scaledWidth) / 2  // Center horizontally
                     canvas.drawBitmap(scaledBitmap, left.toFloat(), y, null)
-                    
+
                     y += scaledHeight
                     scaledBitmap.recycle()
                     screenshotBitmap.recycle()
                 }
             }
-            
+
             // Move y to end of card (cardTop + cardHeight)
             y = cardTop + cardHeight
         }
-        
+
         // Footer
         y += 30
         val footerPaint = Paint(subtitlePaint).apply { textSize = 24f }
         canvas.drawText("由 AutoGLM For Android 生成", padding.toFloat(), y + 30, footerPaint)
-        
+
         return bitmap
     }
-    
+
     /**
      * Wraps text to fit within a given width.
      *
@@ -466,11 +466,11 @@ class HistoryDetailActivity : AppCompatActivity() {
     private fun wrapText(text: String, paint: Paint, maxWidth: Float): List<String> {
         val lines = mutableListOf<String>()
         var remaining = text
-        
+
         while (remaining.isNotEmpty()) {
             val count = paint.breakText(remaining, true, maxWidth, null)
             if (count == 0) break
-            
+
             // Try to break at word boundary
             var breakAt = count
             if (count < remaining.length) {
@@ -479,14 +479,14 @@ class HistoryDetailActivity : AppCompatActivity() {
                     breakAt = lastSpace + 1
                 }
             }
-            
+
             lines.add(remaining.substring(0, breakAt).trim())
             remaining = remaining.substring(breakAt).trim()
         }
-        
+
         return lines.ifEmpty { listOf("") }
     }
-    
+
     /**
      * Saves bitmap to cache directory.
      *
@@ -496,14 +496,21 @@ class HistoryDetailActivity : AppCompatActivity() {
     private fun saveBitmapToCache(bitmap: Bitmap): File {
         val cacheDir = File(cacheDir, "share")
         if (!cacheDir.exists()) cacheDir.mkdirs()
-        
+
+        val compressFormat = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Bitmap.CompressFormat.WEBP_LOSSY
+        } else {
+            @Suppress("DEPRECATION")
+            Bitmap.CompressFormat.WEBP
+        }
+
         val file = File(cacheDir, "autoglm_task_${System.currentTimeMillis()}.webp")
         FileOutputStream(file).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
+            bitmap.compress(compressFormat, 90, out)
         }
         return file
     }
-    
+
     /**
      * Shares the image file using system share sheet.
      *
@@ -515,16 +522,16 @@ class HistoryDetailActivity : AppCompatActivity() {
             "${packageName}.fileprovider",
             file
         )
-        
+
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "image/webp"
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        
+
         startActivity(Intent.createChooser(intent, getString(R.string.history_share_title)))
     }
-    
+
     /**
      * Saves bitmap to device gallery.
      *
@@ -535,7 +542,7 @@ class HistoryDetailActivity : AppCompatActivity() {
      */
     private fun saveBitmapToGallery(bitmap: Bitmap): Boolean {
         val filename = "AutoGLM_${System.currentTimeMillis()}.webp"
-        
+
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // Android 10+ use MediaStore
             val contentValues = ContentValues().apply {
@@ -544,15 +551,21 @@ class HistoryDetailActivity : AppCompatActivity() {
                 put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/AutoGLM")
                 put(MediaStore.Images.Media.IS_PENDING, 1)
             }
-            
+
             val resolver = contentResolver
             val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-            
+
             uri?.let {
                 resolver.openOutputStream(it)?.use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
+                    val compressFormat = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        Bitmap.CompressFormat.WEBP_LOSSY
+                    } else {
+                        @Suppress("DEPRECATION")
+                        Bitmap.CompressFormat.WEBP
+                    }
+                    bitmap.compress(compressFormat, 90, out)
                 }
-                
+
                 contentValues.clear()
                 contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
                 resolver.update(it, contentValues, null, null)
@@ -564,10 +577,16 @@ class HistoryDetailActivity : AppCompatActivity() {
             val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
             val autoglmDir = File(picturesDir, "AutoGLM")
             if (!autoglmDir.exists()) autoglmDir.mkdirs()
-            
+
             val file = File(autoglmDir, filename)
             FileOutputStream(file).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
+                val compressFormat = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    Bitmap.CompressFormat.WEBP_LOSSY
+                } else {
+                    @Suppress("DEPRECATION")
+                    Bitmap.CompressFormat.WEBP
+                }
+                bitmap.compress(compressFormat, 90, out)
             }
 
             // Notify gallery using MediaScannerConnection (recommended approach)
@@ -582,10 +601,10 @@ class HistoryDetailActivity : AppCompatActivity() {
             true
         }
     }
-    
+
     companion object {
         private const val TAG = "HistoryDetailActivity"
-        
+
         /** Intent extra key for task ID. */
         const val EXTRA_TASK_ID = "task_id"
     }

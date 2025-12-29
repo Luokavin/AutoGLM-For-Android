@@ -61,6 +61,7 @@
     <string name="toast_task_started">任务已开始</string>
     <string name="toast_task_cancelled">任务已取消</string>
     <string name="toast_overlay_permission_required">需要悬浮窗权限</string>
+    <string name="toast_notification_permission_required">后台服务需要通知权限</string>
 
     <!-- Settings Activity -->
     <string name="settings_title">设置</string>

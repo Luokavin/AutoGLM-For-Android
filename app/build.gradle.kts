@@ -10,10 +10,10 @@ android {
 
     defaultConfig {
         applicationId = "com.kevinluo.autoglm"
-        minSdk = 24
+        minSdk = 27
         targetSdk = 34
-        versionCode = 5
-        versionName = "0.0.5"
+        versionCode = 2
+        versionName = "0.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -32,7 +32,8 @@ android {
 
     buildTypes {
         debug {
-            // 不再使用 applicationIdSuffix，与发行版使用相同包名
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
             resValue("string", "app_name", "AutoGLM Dev")
         }
         release {
@@ -59,7 +60,7 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-    
+
     // Enable JUnit 5 for Kotest property-based testing
     testOptions {
         unitTests.all {
@@ -69,33 +70,25 @@ android {
     }
 }
 
-// Copy dev_profiles.json to assets for debug builds only
+// Copy dev_profiles.json to assets for debug builds
 android.applicationVariants.all {
     val variant = this
-    
-    // Custom APK file name
-    outputs.all {
-        val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-        output.outputFileName = "AutoGLM-${variant.versionName}-${variant.buildType.name}.apk"
-    }
-    
     if (variant.buildType.name == "debug") {
         val copyDevProfiles = tasks.register("copyDevProfiles${variant.name.replaceFirstChar { it.uppercase() }}") {
             val devProfilesFile = rootProject.file("dev_profiles.json")
-            // Use debug-specific assets directory to avoid polluting release builds
-            val assetsDir = file("src/debug/assets")
-            
+            val assetsDir = file("src/main/assets")
+
             doLast {
                 if (devProfilesFile.exists()) {
                     assetsDir.mkdirs()
                     devProfilesFile.copyTo(File(assetsDir, "dev_profiles.json"), overwrite = true)
-                    println("Copied dev_profiles.json to debug assets")
+                    println("Copied dev_profiles.json to assets")
                 } else {
                     println("dev_profiles.json not found, skipping")
                 }
             }
         }
-        
+
         tasks.named("merge${variant.name.replaceFirstChar { it.uppercase() }}Assets") {
             dependsOn(copyDevProfiles)
         }
@@ -111,29 +104,29 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.shizuku.api)
     implementation(libs.shizuku.provider)
-    
+
     // Kotlin Coroutines for async operations
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
-    
+
     // Lifecycle & ViewModel
     implementation(libs.androidx.lifecycle.viewmodel)
     implementation(libs.androidx.lifecycle.runtime)
-    
+
     // Security for encrypted preferences
     implementation(libs.androidx.security.crypto)
-    
+
     // OkHttp for API communication
     implementation(libs.okhttp)
     implementation(libs.okhttp.sse)
     implementation(libs.okhttp.logging)
-    
+
     // Retrofit for API communication
     implementation(libs.retrofit)
-    
+
     // Kotlin Serialization for JSON parsing
     implementation(libs.kotlinx.serialization.json)
-    
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotest.runner.junit5)

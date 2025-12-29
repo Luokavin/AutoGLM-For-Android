@@ -16,10 +16,11 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
@@ -103,6 +104,21 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
     // Component manager for dependency injection
     private lateinit var componentManager: ComponentManager
 
+    private val requestNotificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Logger.i(TAG, "Notification permission granted")
+        } else {
+            Logger.w(TAG, "Notification permission denied")
+            Toast.makeText(
+                this,
+                R.string.toast_notification_permission_required,
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
     // Current step tracking for floating window
     private var currentStepNumber = 0
     private var currentThinking = ""
@@ -185,14 +201,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
         // Initialize ComponentManager
         componentManager = ComponentManager.getInstance(this)
@@ -203,8 +212,15 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
 
         initViews()
         setupListeners()
+        checkAndRequestNotificationPermission()
         setupShizukuListeners()
         setupAccessibilityListener()
+
+        // For accessibility mode, initialize components immediately
+        val controlMode = componentManager.settingsManager.getDeviceControlMode()
+        if (controlMode == DeviceControlMode.ACCESSIBILITY) {
+            componentManager.reinitializeAgent()
+        }
 
         updateDeviceServiceStatus()
         updateOverlayPermissionStatus()
@@ -338,6 +354,80 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         updateDeviceServiceStatus()
     }
 
+    /**
+     * Attempts to automatically enable AutoGLM Accessibility Service when in accessibility mode
+     * and the app has WRITE_SECURE_SETTINGS permission.
+     *
+     * This writes the component into Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES and sets
+     * Settings.Secure.ACCESSIBILITY_ENABLED to 1. Requires privileged permission.
+     */
+    private fun tryAutoEnableAccessibilityService() {
+        val controlMode = componentManager.settingsManager.getDeviceControlMode()
+        if (controlMode != DeviceControlMode.ACCESSIBILITY) return
+
+        // Already enabled
+        if (AutoGLMAccessibilityService.isEnabled()) return
+
+        // Check WRITE_SECURE_SETTINGS permission
+        val hasWss = PermissionChecker.checkSelfPermission(
+            this,
+            android.Manifest.permission.WRITE_SECURE_SETTINGS
+        ) == PermissionChecker.PERMISSION_GRANTED
+
+        if (!hasWss) {
+            Logger.d(TAG, "WRITE_SECURE_SETTINGS not granted; skip auto-enable")
+            return
+        }
+
+        val component = ComponentName(this, AutoGLMAccessibilityService::class.java)
+        val flattened = component.flattenToString()
+        try {
+            val current = Settings.Secure.getString(
+                contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            )
+            val items = current?.split(":")?.filter { it.isNotBlank() }?.toMutableSet() ?: mutableSetOf()
+            if (!items.contains(flattened)) {
+                items.add(flattened)
+            }
+            val newValue = items.joinToString(":")
+            val updated = Settings.Secure.putString(
+                contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+                newValue
+            )
+            val enabled = Settings.Secure.putInt(
+                contentResolver,
+                Settings.Secure.ACCESSIBILITY_ENABLED,
+                1
+            )
+            Logger.i(
+                TAG,
+                "Auto-enable accessibility attempted: updated=$updated enabledSet=$enabled"
+            )
+        } catch (e: Exception) {
+            Logger.e(TAG, "Failed to auto-enable accessibility service", e)
+        }
+
+        // Refresh UI after attempt
+        updateAccessibilityStatus()
+    }
+
+    /**
+     * Checks and requests notification permission on Android 13+.
+     */
+    private fun checkAndRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         Logger.d(TAG, "onResume - checking for settings changes")
@@ -350,6 +440,9 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
 
         // Update accessibility status (user may have enabled it or mode changed)
         updateAccessibilityStatus()
+
+        // Attempt auto-enable accessibility if applicable
+        tryAutoEnableAccessibilityService()
 
         // Re-setup floating window callbacks if service is running
         FloatingWindowService.getInstance()?.let { service ->
@@ -374,12 +467,13 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
             }
         }
 
-        // Only reinitialize if service is connected and we need to refresh
+        // Check if settings actually changed before reinitializing
+        if (componentManager.settingsManager.hasConfigChanged()) {
+            componentManager.reinitializeAgent()
+        }
+
+        // Update button states
         if (componentManager.isServiceConnected) {
-            // Check if settings actually changed before reinitializing
-            if (componentManager.settingsManager.hasConfigChanged()) {
-                componentManager.reinitializeAgent()
-            }
             componentManager.setPhoneAgentListener(this)
             setupConfirmationCallback()
         }
