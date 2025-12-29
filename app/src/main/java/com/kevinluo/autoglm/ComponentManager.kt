@@ -227,12 +227,18 @@ class ComponentManager private constructor(private val context: Context) {
             floatingWindowControllerProvider = { FloatingWindowService.getInstance() }
         )
 
-        // Create ActionHandler with floating window provider to hide window during touch operations
+        // Create ShizukuDeviceController for Shizuku mode
+        _deviceController = ShizukuDeviceController(
+            userService = service,
+            textInputManager = _textInputManager!!,
+            screenshotProvider = { _screenshotService!! }
+        )
+
+        // Create ActionHandler with IDeviceController
         _actionHandler = ActionHandler(
-            deviceExecutor = _deviceExecutor!!,
+            deviceController = _deviceController!!,
             appResolver = appResolver,
             swipeGenerator = swipeGenerator,
-            textInputManager = _textInputManager!!,
             floatingWindowProvider = { FloatingWindowService.getInstance() }
         )
 
@@ -251,24 +257,11 @@ class ComponentManager private constructor(private val context: Context) {
 
     /**
      * Initializes components for accessibility mode.
-     * Creates a stub device controller when Accessibility Service is available.
+     * Creates a device controller when Accessibility Service is available.
      */
     private fun initializeAccessibilityComponents() {
         // Create AccessibilityDeviceController
         _deviceController = AccessibilityDeviceController(context)
-
-        // Create a stub UserService for accessibility mode
-        val stubUserService = object : IUserService {
-            override fun executeCommand(cmd: String): String = ""
-            override fun destroy() {}
-            override fun asBinder() = null
-        }
-
-        // Create DeviceExecutor with stub service (won't be actually used)
-        _deviceExecutor = DeviceExecutor(stubUserService)
-
-        // Create TextInputManager with stub service (won't be actually used)
-        _textInputManager = TextInputManager(stubUserService)
 
         // Create ScreenshotService for accessibility mode with proper screenshotProvider
         // The screenshotProvider delegates to AccessibilityDeviceController for screenshots
@@ -278,14 +271,12 @@ class ComponentManager private constructor(private val context: Context) {
             floatingWindowControllerProvider = { FloatingWindowService.getInstance() }
         )
 
-        // Create ActionHandler for accessibility mode
-        // The DeviceExecutor and TextInputManager instances exist but their actual methods
-        // are not used in accessibility mode - all operations go through IDeviceController
+        // Create ActionHandler with IDeviceController (AccessibilityDeviceController)
+        // No need for DeviceExecutor or TextInputManager, all operations go through the controller
         _actionHandler = ActionHandler(
-            deviceExecutor = _deviceExecutor!!,
+            deviceController = _deviceController!!,
             appResolver = appResolver,
             swipeGenerator = swipeGenerator,
-            textInputManager = _textInputManager!!,
             floatingWindowProvider = { FloatingWindowService.getInstance() }
         )
 

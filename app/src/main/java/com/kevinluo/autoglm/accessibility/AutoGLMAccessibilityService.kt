@@ -102,15 +102,19 @@ class AutoGLMAccessibilityService : AccessibilityService() {
     suspend fun captureScreen(): Bitmap? = suspendCancellableCoroutine { continuation ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             try {
+                Logger.d(TAG, "Starting screenshot capture via AccessibilityService.takeScreenshot()")
                 takeScreenshot(/* displayId= */ 0, /* executor= */ mainExecutor,
                     object : TakeScreenshotCallback {
                         override fun onSuccess(screenshot: ScreenshotResult) {
                             try {
+                                Logger.d(TAG, "Screenshot callback: onSuccess")
                                 val hardwareBuffer = screenshot.hardwareBuffer
                                 val bitmap = Bitmap.wrapHardwareBuffer(hardwareBuffer, screenshot.colorSpace)
                                 if (bitmap != null) {
+                                    Logger.d(TAG, "Successfully wrapped HardwareBuffer to Bitmap: ${bitmap.width}x${bitmap.height}")
                                     continuation.resume(bitmap)
                                 } else {
+                                    Logger.w(TAG, "Failed to wrap HardwareBuffer to Bitmap")
                                     continuation.resume(null)
                                 }
                                 hardwareBuffer.close()
@@ -121,16 +125,20 @@ class AutoGLMAccessibilityService : AccessibilityService() {
                         }
 
                         override fun onFailure(error: Int) {
-                            Logger.e(TAG, "Screenshot capture failed with error code: $error")
+                            Logger.e(TAG, "Screenshot callback: onFailure with error code: $error")
                             continuation.resume(null)
                         }
                     })
+            } catch (e: SecurityException) {
+                Logger.e(TAG, "SecurityException: Service doesn't have screenshot capability. " +
+                    "Please ensure: 1) Accessibility service is enabled 2) accessibility_service_config.xml has canTakeScreenshot=true 3) Device is Android 13+", e)
+                continuation.resume(null)
             } catch (e: Exception) {
-                Logger.e(TAG, "Failed to capture screenshot", e)
+                Logger.e(TAG, "Failed to call takeScreenshot", e)
                 continuation.resume(null)
             }
         } else {
-            Logger.w(TAG, "Screenshot not supported on Android < 13")
+            Logger.w(TAG, "Screenshot not supported on Android < 13 (current: ${Build.VERSION.SDK_INT})")
             continuation.resume(null)
         }
     }

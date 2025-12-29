@@ -5,6 +5,7 @@
     android:accessibilityFlags="flagDefault|flagRequestTouchExplorationMode|flagReportViewIds"
     android:canPerformGestures="true"
     android:canRetrieveWindowContent="true"
+    android:canTakeScreenshot="true"
     android:description="@string/accessibility_service_description"
     android:notificationTimeout="100"
     android:settingsActivity="com.kevinluo.autoglm.settings.SettingsActivity">

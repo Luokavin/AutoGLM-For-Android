@@ -1,8 +1,7 @@
 package com.kevinluo.autoglm.action
 
 import com.kevinluo.autoglm.app.AppResolver
-import com.kevinluo.autoglm.device.DeviceExecutor
-import com.kevinluo.autoglm.input.TextInputManager
+import com.kevinluo.autoglm.device.IDeviceController
 import com.kevinluo.autoglm.screenshot.FloatingWindowController
 import com.kevinluo.autoglm.util.CoordinateConverter
 import com.kevinluo.autoglm.util.ErrorHandler
@@ -11,25 +10,23 @@ import com.kevinluo.autoglm.util.Logger
 import kotlinx.coroutines.delay
 
 /**
- * Handles execution of agent actions by coordinating with DeviceExecutor,
- * AppResolver, HumanizedSwipeGenerator, and TextInputManager.
+ * Handles execution of agent actions by coordinating with IDeviceController,
+ * AppResolver, and HumanizedSwipeGenerator.
  *
  * This class is responsible for translating high-level [AgentAction] commands
  * into device-level operations. It manages floating window visibility during
  * touch operations to prevent interference.
  *
- * @param deviceExecutor Executor for device-level operations (tap, swipe, etc.)
+ * @param deviceController Device controller for device-level operations (tap, swipe, text input, etc.)
  * @param appResolver Resolver for app name to package name mapping
  * @param swipeGenerator Generator for humanized swipe paths
- * @param textInputManager Manager for text input operations
  * @param floatingWindowProvider Optional provider for floating window controller
  *
  */
 class ActionHandler(
-    private val deviceExecutor: DeviceExecutor,
+    private val deviceController: IDeviceController,
     private val appResolver: AppResolver,
     private val swipeGenerator: HumanizedSwipeGenerator,
-    private val textInputManager: TextInputManager,
     private val floatingWindowProvider: (() -> FloatingWindowController?)? = null
 ) {
 
@@ -95,6 +92,26 @@ class ActionHandler(
     private suspend fun showFloatingWindow() {
         delay(WINDOW_SHOW_DELAY_MS)
         floatingWindowProvider?.invoke()?.show()
+    }
+
+    /**
+     * Handles text input via the device controller.
+     *
+     * @param text The text to input
+     * @return ActionResult with success status and message
+     */
+    private suspend fun inputText(text: String): ActionResult {
+        return try {
+            val result = deviceController.inputText(text)
+            if (result.contains("Error", ignoreCase = true)) {
+                ActionResult(false, false, result)
+            } else {
+                ActionResult(true, false, result)
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Text input failed", e)
+            ActionResult(false, false, "文本输入失败: ${e.message}")
+        }
     }
 
     /**
@@ -180,7 +197,7 @@ class ActionHandler(
         hideFloatingWindow()
         
         return try {
-            val result = deviceExecutor.tap(absX, absY)
+            val result = deviceController.tap(absX, absY)
             if (isDeviceExecutorError(result)) {
                 Logger.w(TAG, "Tap command failed: $result")
                 ActionResult(false, false, "点击失败: $result")
@@ -224,7 +241,7 @@ class ActionHandler(
         hideFloatingWindow()
         
         return try {
-            val result = deviceExecutor.swipe(swipePath.points, swipePath.durationMs)
+            val result = deviceController.swipe(swipePath.points, swipePath.durationMs)
             
             // Wait for swipe animation to complete before showing floating window
             // The swipe command returns immediately, but the gesture takes time
@@ -259,9 +276,8 @@ class ActionHandler(
         return try {
             // Small delay to let the system settle focus
             delay(200)
-            
-            val result = textInputManager.typeText(action.text)
-            ActionResult(result.success, false, result.message)
+
+            inputText(action.text)
         } finally {
             // Always show floating window after typing, even if typing fails
             showFloatingWindow()
@@ -279,8 +295,8 @@ class ActionHandler(
         return try {
             // Small delay to let the system settle focus
             delay(200)
-            
-            val result = textInputManager.typeText(action.text)
+
+            val result = inputText(action.text)
             ActionResult(result.success, false, "输入名称: ${action.text}")
         } finally {
             // Always show floating window after typing, even if typing fails
@@ -310,7 +326,7 @@ class ActionHandler(
         
         return if (packageName != null) {
             Logger.i(TAG, "Launching package: $packageName")
-            val launchResult = deviceExecutor.launchApp(packageName)
+            val launchResult = deviceController.launchApp(packageName)
             
             // Check if launch was successful by examining the result
             val isError = launchResult.contains("Error", ignoreCase = true) ||
@@ -321,7 +337,7 @@ class ActionHandler(
             if (isError) {
                 Logger.w(TAG, "Launch failed for $packageName: $launchResult")
                 // Launch failed - instruct model to find app icon on screen
-                deviceExecutor.pressKey(DeviceExecutor.KEYCODE_HOME)
+                deviceController.pressKey(IDeviceController.KEYCODE_HOME)
                 ActionResult(
                     success = true,  // Operation itself succeeded, just app not found
                     shouldFinish = false,
@@ -334,7 +350,7 @@ class ActionHandler(
             // Package not found - instruct model to find app icon on screen
             Logger.i(TAG, "Package not found for '${action.app}', instructing model to find app icon on screen")
             // Press Home first to go to home screen
-            deviceExecutor.pressKey(DeviceExecutor.KEYCODE_HOME)
+            deviceController.pressKey(IDeviceController.KEYCODE_HOME)
             ActionResult(
                 success = true,
                 shouldFinish = false,
@@ -378,11 +394,11 @@ class ActionHandler(
     private suspend fun executeBack(): ActionResult {
         // First, dismiss keyboard with ESCAPE key to ensure Back actually navigates
         // If keyboard is shown, the first Back would just close it
-        deviceExecutor.pressKey(111) // KEYCODE_ESCAPE
+        deviceController.pressKey(111) // KEYCODE_ESCAPE
         delay(100)
         
         // Now press Back to navigate
-        val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_BACK)
+        val result = deviceController.pressKey(IDeviceController.KEYCODE_BACK)
         return if (isDeviceExecutorError(result)) {
             Logger.w(TAG, "Back key press failed: $result")
             ActionResult(false, false, "返回键失败: $result")
@@ -395,7 +411,7 @@ class ActionHandler(
      * Executes a Home action.
      */
     private suspend fun executeHome(): ActionResult {
-        val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_HOME)
+        val result = deviceController.pressKey(IDeviceController.KEYCODE_HOME)
         return if (isDeviceExecutorError(result)) {
             Logger.w(TAG, "Home key press failed: $result")
             ActionResult(false, false, "主页键失败: $result")
@@ -408,7 +424,7 @@ class ActionHandler(
      * Executes a VolumeUp action.
      */
     private suspend fun executeVolumeUp(): ActionResult {
-        val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_VOLUME_UP)
+        val result = deviceController.pressKey(IDeviceController.KEYCODE_VOLUME_UP)
         return if (isDeviceExecutorError(result)) {
             Logger.w(TAG, "Volume up key press failed: $result")
             ActionResult(false, false, "音量+键失败: $result")
@@ -421,7 +437,7 @@ class ActionHandler(
      * Executes a VolumeDown action.
      */
     private suspend fun executeVolumeDown(): ActionResult {
-        val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_VOLUME_DOWN)
+        val result = deviceController.pressKey(IDeviceController.KEYCODE_VOLUME_DOWN)
         return if (isDeviceExecutorError(result)) {
             Logger.w(TAG, "Volume down key press failed: $result")
             ActionResult(false, false, "音量-键失败: $result")
@@ -434,7 +450,7 @@ class ActionHandler(
      * Executes a Power action.
      */
     private suspend fun executePower(): ActionResult {
-        val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_POWER)
+        val result = deviceController.pressKey(IDeviceController.KEYCODE_POWER)
         return if (isDeviceExecutorError(result)) {
             Logger.w(TAG, "Power key press failed: $result")
             ActionResult(false, false, "电源键失败: $result")
@@ -462,7 +478,7 @@ class ActionHandler(
         hideFloatingWindow()
         
         return try {
-            val result = deviceExecutor.longPress(absX, absY, action.durationMs)
+            val result = deviceController.longPress(absX, absY, action.durationMs)
             
             // Wait for long press to complete before showing floating window
             // The command returns immediately, but the gesture takes time
@@ -498,7 +514,7 @@ class ActionHandler(
         hideFloatingWindow()
         
         return try {
-            val result = deviceExecutor.doubleTap(absX, absY)
+            val result = deviceController.doubleTap(absX, absY)
             if (isDeviceExecutorError(result)) {
                 Logger.w(TAG, "Double tap command failed: $result")
                 ActionResult(false, false, "双击失败: $result")

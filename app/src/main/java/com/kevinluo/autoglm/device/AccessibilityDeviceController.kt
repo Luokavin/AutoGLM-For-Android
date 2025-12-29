@@ -197,15 +197,17 @@ class AccessibilityDeviceController(
         }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            Logger.w(TAG, "Screenshot not supported on Android < 13")
+            Logger.w(TAG, "Screenshot not supported on Android < 13 (API 33)")
             return@withContext createFallbackScreenshot()
         }
 
         try {
+            Logger.d(TAG, "Attempting to capture screenshot via AccessibilityService")
             val bitmap = service.captureScreen()
             if (bitmap != null) {
                 val width = bitmap.width
                 val height = bitmap.height
+                Logger.d(TAG, "Screenshot captured successfully: ${width}x${height}")
 
                 // Convert bitmap to Screenshot
                 val base64Data = encodeBitmapToBase64(bitmap)
@@ -220,11 +222,14 @@ class AccessibilityDeviceController(
                     isSensitive = false
                 )
             } else {
-                Logger.w(TAG, "Screenshot capture returned null")
+                Logger.w(TAG, "Screenshot capture returned null bitmap")
                 createFallbackScreenshot()
             }
+        } catch (e: SecurityException) {
+            Logger.e(TAG, "Security exception when capturing screenshot - service may not have screenshot capability", e)
+            createFallbackScreenshot()
         } catch (e: Exception) {
-            Logger.e(TAG, "Failed to capture screenshot", e)
+            Logger.e(TAG, "Failed to capture screenshot via accessibility service", e)
             createFallbackScreenshot()
         }
     }
