@@ -4,7 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
+import com.kevinluo.autoglm.BuildConfig
 import com.kevinluo.autoglm.util.Logger
+import kotlin.coroutines.coroutineContext
 
 /**
  * Helper class for keyboard-related operations.
@@ -16,17 +18,24 @@ import com.kevinluo.autoglm.util.Logger
 object KeyboardHelper {
 
     private const val TAG = "KeyboardHelper"
-    
+
     /** AutoGLM package name. */
-    private const val PACKAGE_NAME = "com.kevinluo.autoglm"
-    
+    private const val PACKAGE_NAME = BuildConfig.APPLICATION_ID
+
     /** AutoGLM Keyboard IME ID (Android system format). */
-    const val IME_ID = "$PACKAGE_NAME/.input.AutoGLMKeyboardService"
-    
+
+    val IME_ID = "${BuildConfig.APPLICATION_ID}/${AutoGLMKeyboardService::class.java.name}"
+
+    fun getImeId(context: Context): String {
+        val pkg = context.packageName
+        val service = AutoGLMKeyboardService::class.java.name
+        return "$pkg/$service"
+    }
+
     /**
      * Checks if the given IME ID belongs to AutoGLM Keyboard.
      */
-    fun isAutoGLMKeyboard(imeId: String): Boolean = 
+    fun isAutoGLMKeyboard(imeId: String): Boolean =
         imeId.startsWith("$PACKAGE_NAME/")
 
     /**
@@ -53,7 +62,7 @@ object KeyboardHelper {
 
         for (ime in enabledInputMethods) {
             Logger.d(TAG, "Found IME: package=${ime.packageName}, service=${ime.serviceName}")
-            if (ime.packageName == PACKAGE_NAME &&
+            if (ime.packageName.contains(PACKAGE_NAME)  &&
                 ime.serviceName.endsWith(".AutoGLMKeyboardService")) {
                 Logger.d(TAG, "AutoGLM Keyboard is enabled")
                 return KeyboardStatus.ENABLED
