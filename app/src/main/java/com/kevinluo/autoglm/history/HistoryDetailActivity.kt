@@ -569,12 +569,16 @@ class HistoryDetailActivity : AppCompatActivity() {
             FileOutputStream(file).use { out ->
                 bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
             }
-            
-            // Notify gallery
-            val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
-            intent.data = android.net.Uri.fromFile(file)
-            sendBroadcast(intent)
-            
+
+            // Notify gallery using MediaScannerConnection (recommended approach)
+            android.media.MediaScannerConnection.scanFile(
+                this,
+                arrayOf(file.absolutePath),
+                arrayOf("image/webp")
+            ) { path, uri ->
+                Logger.d(TAG, "Scanned $path: $uri")
+            }
+
             true
         }
     }

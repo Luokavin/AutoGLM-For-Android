@@ -775,7 +775,9 @@ class FloatingWindowService : Service(), FloatingWindowController {
             gravity = Gravity.TOP or Gravity.START
             x = 0
             y = 0
-            // Allow keyboard input
+            // Allow keyboard input - Note: SOFT_INPUT_ADJUST_RESIZE is deprecated but still
+            // required for floating windows to resize when keyboard is shown
+            @Suppress("DEPRECATION")
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
     }

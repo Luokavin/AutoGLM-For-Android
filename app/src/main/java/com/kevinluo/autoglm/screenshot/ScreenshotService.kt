@@ -78,10 +78,20 @@ interface FloatingWindowController {
  *
  */
 class ScreenshotService(
-    private val userService: IUserService,
+    userService: IUserService? = null,
+    private val screenshotProvider: (suspend () -> Screenshot)? = null,
     private val floatingWindowControllerProvider: () -> FloatingWindowController? = { null }
 ) {
-    
+    // Store userService for internal use (only used for Shizuku mode via shell commands)
+    private val userService: IUserService? = userService
+
+    init {
+        // At least one capture method must be available
+        require(userService != null || screenshotProvider != null) {
+            "Either userService or screenshotProvider must be provided"
+        }
+    }
+
     companion object {
         private const val TAG = "ScreenshotService"
         private const val HIDE_DELAY_MS = 200L
@@ -156,31 +166,43 @@ class ScreenshotService(
      *
      */
     private suspend fun captureScreen(): Screenshot = withContext(Dispatchers.IO) {
+        // Use screenshotProvider if available (Accessibility mode)
+        if (screenshotProvider != null) {
+            Logger.d(TAG, "Using screenshot provider (Accessibility mode)")
+            return@withContext try {
+                screenshotProvider.invoke()
+            } catch (e: Exception) {
+                Logger.e(TAG, "Screenshot provider failed, using fallback", e)
+                createFallbackScreenshot()
+            }
+        }
+
+        // Otherwise use shell command method (Shizuku mode)
         try {
-            Logger.d(TAG, "Executing screencap command")
-            
+            Logger.d(TAG, "Executing screencap command (Shizuku mode)")
+
             val pngData = executeScreencapToBytes()
-            
+
             if (pngData == null || pngData.isEmpty()) {
                 Logger.w(TAG, "Failed to capture screenshot, returning fallback")
                 return@withContext createFallbackScreenshot()
             }
-            
+
             Logger.d(TAG, "PNG data captured: ${pngData.size} bytes")
-            
+
             // Decode PNG to bitmap
             var bitmap = BitmapFactory.decodeByteArray(pngData, 0, pngData.size)
             if (bitmap == null) {
                 Logger.w(TAG, "Failed to decode PNG, returning fallback")
                 return@withContext createFallbackScreenshot()
             }
-            
+
             val originalWidth = bitmap.width
             val originalHeight = bitmap.height
-            
+
             // Calculate scaled dimensions based on max size constraints
             val (scaledWidth, scaledHeight) = calculateOptimalDimensions(originalWidth, originalHeight)
-            
+
             // Scale bitmap if needed
             if (scaledWidth != originalWidth || scaledHeight != originalHeight) {
                 val scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
@@ -188,7 +210,7 @@ class ScreenshotService(
                 bitmap = scaledBitmap
                 Logger.d(TAG, "Scaled from ${originalWidth}x${originalHeight} to ${scaledWidth}x${scaledHeight}")
             }
-            
+
             // Convert to WebP for better compression
             val webpStream = ByteArrayOutputStream()
             bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, WEBP_QUALITY, webpStream)
@@ -257,16 +279,21 @@ class ScreenshotService(
      *
      */
     private suspend fun executeScreencapToBytes(): ByteArray? = coroutineScope {
+        val service = userService ?: run {
+            Logger.w(TAG, "UserService not available for shell command screenshot")
+            return@coroutineScope null
+        }
+
         val timestamp = System.currentTimeMillis()
         val pngFile = "/data/local/tmp/screenshot_$timestamp.png"
         val base64File = "$pngFile.b64"
-        
+
         try {
             Logger.d(TAG, "Attempting screenshot capture")
             val startTime = System.currentTimeMillis()
-            
+
             // Capture screenshot and pipe to base64
-            val captureResult = userService.executeCommand(
+            val captureResult = service.executeCommand(
                 "screencap -p | base64 > $base64File && stat -c %s $base64File"
             )
             
