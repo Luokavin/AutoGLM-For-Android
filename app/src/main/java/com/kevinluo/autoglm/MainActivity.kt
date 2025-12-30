@@ -1,28 +1,35 @@
 package com.kevinluo.autoglm
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.provider.Settings
 import android.view.View
+import android.view.accessibility.AccessibilityManager
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.kevinluo.autoglm.accessibility.AutoGLMAccessibilityService
 import com.kevinluo.autoglm.action.ActionHandler
 import com.kevinluo.autoglm.action.AgentAction
 import com.kevinluo.autoglm.agent.PhoneAgent
 import com.kevinluo.autoglm.agent.PhoneAgentListener
+import com.kevinluo.autoglm.device.DeviceControlMode
 import com.kevinluo.autoglm.settings.SettingsActivity
 import com.kevinluo.autoglm.ui.FloatingWindowService
 import com.kevinluo.autoglm.ui.TaskStatus
@@ -50,10 +57,12 @@ import rikka.shizuku.Shizuku
  * The activity implements [PhoneAgentListener] to receive callbacks
  * during task execution for UI updates.
  *
+ * Requirements: 1.1, 2.1, 2.2
  */
 class MainActivity : AppCompatActivity(), PhoneAgentListener {
 
     // Shizuku status views
+    private lateinit var shizukuCard: View
     private lateinit var statusText: TextView
     private lateinit var shizukuStatusIndicator: View
     private lateinit var shizukuButtonsRow: View
@@ -73,6 +82,12 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
     private lateinit var keyboardStatusText: TextView
     private lateinit var enableKeyboardBtn: Button
 
+    // Accessibility permission views
+    private lateinit var accessibilityCard: View
+    private lateinit var accessibilityStatusIcon: android.widget.ImageView
+    private lateinit var accessibilityStatusText: TextView
+    private lateinit var requestAccessibilityBtn: Button
+
     // Task input views
     private lateinit var taskInputLayout: TextInputLayout
     private lateinit var taskInput: TextInputEditText
@@ -88,7 +103,22 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
 
     // Component manager for dependency injection
     private lateinit var componentManager: ComponentManager
-    
+
+    private val requestNotificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Logger.i(TAG, "Notification permission granted")
+        } else {
+            Logger.w(TAG, "Notification permission denied")
+            Toast.makeText(
+                this,
+                R.string.toast_notification_permission_required,
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
     // Current step tracking for floating window
     private var currentStepNumber = 0
     private var currentThinking = ""
@@ -108,26 +138,26 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val userService = IUserService.Stub.asInterface(service)
             Logger.i(TAG, "UserService connected")
-            
+
             // Notify ComponentManager
             componentManager.onServiceConnected(userService)
-            
+
             runOnUiThread {
                 Toast.makeText(this@MainActivity, R.string.toast_user_service_connected, Toast.LENGTH_SHORT).show()
-                updateShizukuStatus()
+                updateDeviceServiceStatus()
                 initializePhoneAgent()
             }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             Logger.i(TAG, "UserService disconnected")
-            
+
             // Notify ComponentManager
             componentManager.onServiceDisconnected()
-            
+
             runOnUiThread {
                 Toast.makeText(this@MainActivity, R.string.toast_user_service_disconnected, Toast.LENGTH_SHORT).show()
-                updateShizukuStatus()
+                updateDeviceServiceStatus()
                 updateTaskButtonStates()
             }
         }
@@ -137,7 +167,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
             if (requestCode == SHIZUKU_PERMISSION_REQUEST_CODE) {
                 if (grantResult == PackageManager.PERMISSION_GRANTED) {
-                    updateShizukuStatus()
+                    updateDeviceServiceStatus()
                     bindUserService()
                     Toast.makeText(this, R.string.toast_shizuku_permission_granted, Toast.LENGTH_SHORT).show()
                 } else {
@@ -147,7 +177,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         }
 
     private val binderReceivedListener = Shizuku.OnBinderReceivedListener {
-        updateShizukuStatus()
+        updateDeviceServiceStatus()
         if (hasShizukuPermission()) {
             bindUserService()
         }
@@ -156,35 +186,82 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
     private val binderDeadListener = Shizuku.OnBinderDeadListener {
         Logger.w(TAG, "Shizuku binder died")
         componentManager.onServiceDisconnected()
-        updateShizukuStatus()
+        updateDeviceServiceStatus()
         updateTaskButtonStates()
     }
 
+    // Accessibility state change listener
+    private val accessibilityStateChangeListener =
+        AccessibilityManager.AccessibilityStateChangeListener { enabled ->
+            Logger.d(TAG, "Accessibility state changed: enabled=$enabled")
+            runOnUiThread {
+                updateAccessibilityStatus()
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
         // Initialize ComponentManager
         componentManager = ComponentManager.getInstance(this)
         Logger.i(TAG, "ComponentManager initialized")
-        
+
+        // Log all launchable apps at startup
+        logAllLaunchableApps()
+
         initViews()
         setupListeners()
+        checkAndRequestNotificationPermission()
         setupShizukuListeners()
-        
-        updateShizukuStatus()
+        setupAccessibilityListener()
+
+        // For accessibility mode, initialize components immediately
+        val controlMode = componentManager.settingsManager.getDeviceControlMode()
+        if (controlMode == DeviceControlMode.ACCESSIBILITY) {
+            componentManager.reinitializeAgent()
+        }
+
+        updateDeviceServiceStatus()
         updateOverlayPermissionStatus()
         updateKeyboardStatus()
+        updateAccessibilityStatus()
         updateTaskStatus(TaskStatus.IDLE)
+        updateTaskButtonStates()
     }
-    
+
+    /**
+     * Logs all launchable apps for debugging purposes.
+     *
+     * Queries the package manager for all apps with launcher activities
+     * and logs them for debugging. Only logs the first 20 apps to avoid
+     * excessive log output.
+     */
+    private fun logAllLaunchableApps() {
+        // Query apps without loading icons to avoid excessive logging
+        val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+            addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+        }
+        val resolveInfoList = packageManager.queryIntentActivities(intent, 0)
+
+        val apps = resolveInfoList.mapNotNull { resolveInfo ->
+            val activityInfo = resolveInfo.activityInfo ?: return@mapNotNull null
+            val displayName = resolveInfo.loadLabel(packageManager)?.toString() ?: return@mapNotNull null
+            val packageName = activityInfo.packageName ?: return@mapNotNull null
+            displayName to packageName
+        }.distinctBy { it.second }
+
+        Logger.i(TAG, "=== All Launchable Apps: ${apps.size} total ===")
+        // Only log first 20 apps to avoid log quota
+        apps.take(20).forEach { (name, pkg) ->
+            Logger.i(TAG, "  $name -> $pkg")
+        }
+        if (apps.size > 20) {
+            Logger.i(TAG, "  ... and ${apps.size - 20} more apps")
+        }
+        Logger.i(TAG, "=== End of App List ===")
+    }
+
     /**
      * Updates the overlay permission status display.
      *
@@ -193,7 +270,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      */
     private fun updateOverlayPermissionStatus() {
         val hasPermission = FloatingWindowService.canDrawOverlays(this)
-        
+
         if (hasPermission) {
             overlayStatusText.text = getString(R.string.overlay_permission_granted)
             overlayStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.status_running))
@@ -204,7 +281,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
             requestOverlayBtn.visibility = View.VISIBLE
         }
     }
-    
+
     /**
      * Updates the keyboard status display.
      *
@@ -212,7 +289,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      */
     private fun updateKeyboardStatus() {
         val status = com.kevinluo.autoglm.input.KeyboardHelper.getAutoGLMKeyboardStatus(this)
-        
+
         when (status) {
             com.kevinluo.autoglm.input.KeyboardHelper.KeyboardStatus.ENABLED -> {
                 keyboardStatusText.text = getString(R.string.keyboard_settings_subtitle)
@@ -228,16 +305,145 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         }
     }
 
+    /**
+     * Updates the accessibility service status display.
+     *
+     * Checks if AutoGLM Accessibility Service is enabled and updates the UI accordingly.
+     * Also shows/hides relevant permission cards based on the device control mode.
+     */
+    private fun updateAccessibilityStatus() {
+        val controlMode = componentManager.settingsManager.getDeviceControlMode()
+
+        // Show/hide relevant cards based on control mode
+        when (controlMode) {
+            DeviceControlMode.SHIZUKU -> {
+                // Shizuku mode: show Shizuku card and keyboard card, hide accessibility card
+                shizukuCard.visibility = View.VISIBLE
+                keyboardCard.visibility = View.VISIBLE
+                accessibilityCard.visibility = View.GONE
+            }
+            DeviceControlMode.ACCESSIBILITY -> {
+                // Accessibility mode: hide Shizuku card and keyboard card, show accessibility card
+                shizukuCard.visibility = View.GONE
+                keyboardCard.visibility = View.GONE
+                accessibilityCard.visibility = View.VISIBLE
+
+                // Update accessibility status
+                val isAccessibilityEnabled = AutoGLMAccessibilityService.isEnabled()
+
+                if (isAccessibilityEnabled) {
+                    accessibilityStatusText.text = getString(R.string.accessibility_permission_granted)
+                    accessibilityStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.status_running))
+                    requestAccessibilityBtn.visibility = View.GONE
+                } else {
+                    accessibilityStatusText.text = getString(R.string.accessibility_permission_denied)
+                    accessibilityStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.status_waiting))
+                    requestAccessibilityBtn.visibility = View.VISIBLE
+                    requestAccessibilityBtn.text = getString(R.string.request_accessibility_permission)
+                }
+
+                // Check Android version for accessibility support
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                    accessibilityStatusText.text = getString(R.string.accessibility_not_supported)
+                    requestAccessibilityBtn.visibility = View.GONE
+                }
+            }
+        }
+
+        // Also update the main status display to reflect the current mode
+        updateDeviceServiceStatus()
+    }
+
+    /**
+     * Attempts to automatically enable AutoGLM Accessibility Service when in accessibility mode
+     * and the app has WRITE_SECURE_SETTINGS permission.
+     *
+     * This writes the component into Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES and sets
+     * Settings.Secure.ACCESSIBILITY_ENABLED to 1. Requires privileged permission.
+     */
+    private fun tryAutoEnableAccessibilityService() {
+        val controlMode = componentManager.settingsManager.getDeviceControlMode()
+        if (controlMode != DeviceControlMode.ACCESSIBILITY) return
+
+        // Already enabled
+        if (AutoGLMAccessibilityService.isEnabled()) return
+
+        // Check WRITE_SECURE_SETTINGS permission
+        val hasWss = PermissionChecker.checkSelfPermission(
+            this,
+            android.Manifest.permission.WRITE_SECURE_SETTINGS
+        ) == PermissionChecker.PERMISSION_GRANTED
+
+        if (!hasWss) {
+            Logger.d(TAG, "WRITE_SECURE_SETTINGS not granted; skip auto-enable")
+            return
+        }
+
+        val component = ComponentName(this, AutoGLMAccessibilityService::class.java)
+        val flattened = component.flattenToString()
+        try {
+            val current = Settings.Secure.getString(
+                contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            )
+            val items = current?.split(":")?.filter { it.isNotBlank() }?.toMutableSet() ?: mutableSetOf()
+            if (!items.contains(flattened)) {
+                items.add(flattened)
+            }
+            val newValue = items.joinToString(":")
+            val updated = Settings.Secure.putString(
+                contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+                newValue
+            )
+            val enabled = Settings.Secure.putInt(
+                contentResolver,
+                Settings.Secure.ACCESSIBILITY_ENABLED,
+                1
+            )
+            Logger.i(
+                TAG,
+                "Auto-enable accessibility attempted: updated=$updated enabledSet=$enabled"
+            )
+        } catch (e: Exception) {
+            Logger.e(TAG, "Failed to auto-enable accessibility service", e)
+        }
+
+        // Refresh UI after attempt
+        updateAccessibilityStatus()
+    }
+
+    /**
+     * Checks and requests notification permission on Android 13+.
+     */
+    private fun checkAndRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         Logger.d(TAG, "onResume - checking for settings changes")
-        
+
         // Update overlay permission status (user may have granted it)
         updateOverlayPermissionStatus()
-        
+
         // Update keyboard status (user may have enabled it)
         updateKeyboardStatus()
-        
+
+        // Update accessibility status (user may have enabled it or mode changed)
+        updateAccessibilityStatus()
+
+        // Attempt auto-enable accessibility if applicable
+        tryAutoEnableAccessibilityService()
+
         // Re-setup floating window callbacks if service is running
         FloatingWindowService.getInstance()?.let { service ->
             service.setStopTaskCallback {
@@ -260,36 +466,37 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
                 resumeTask()
             }
         }
-        
-        // Only reinitialize if service is connected and we need to refresh
+
+        // Check if settings actually changed before reinitializing
+        if (componentManager.settingsManager.hasConfigChanged()) {
+            componentManager.reinitializeAgent()
+        }
+
+        // Update button states
         if (componentManager.isServiceConnected) {
-            // Check if settings actually changed before reinitializing
-            // But NEVER reinitialize while a task is running or paused - this would cancel the task!
-            val isTaskActive = componentManager.phoneAgent?.let { 
-                it.isRunning() || it.isPaused() 
-            } ?: false
-            
-            if (!isTaskActive && componentManager.settingsManager.hasConfigChanged()) {
-                componentManager.reinitializeAgent()
-            }
             componentManager.setPhoneAgentListener(this)
             setupConfirmationCallback()
-            updateTaskButtonStates()
         }
+        updateTaskButtonStates()
     }
 
     override fun onDestroy() {
         Logger.i(TAG, "onDestroy - cleaning up")
         super.onDestroy()
-        
+
         // Remove Shizuku listeners
         Shizuku.removeRequestPermissionResultListener(onRequestPermissionResultListener)
         Shizuku.removeBinderReceivedListener(binderReceivedListener)
         Shizuku.removeBinderDeadListener(binderDeadListener)
 
+        // Remove accessibility state change listener
+        (getSystemService(ACCESSIBILITY_SERVICE) as? AccessibilityManager)?.removeAccessibilityStateChangeListener(
+            accessibilityStateChangeListener
+        )
+
         // Cancel any running task
         componentManager.phoneAgent?.cancel()
-        
+
         // Unbind user service
         if (componentManager.isServiceConnected) {
             try {
@@ -298,7 +505,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
                 Logger.e(TAG, "Error unbinding user service", e)
             }
         }
-        
+
         // Note: Don't stop FloatingWindowService here - it should run independently
         // The service will be stopped when user explicitly closes it or the app process is killed
     }
@@ -310,6 +517,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      */
     private fun initViews() {
         // Shizuku status views
+        shizukuCard = findViewById(R.id.shizukuCard)
         statusText = findViewById(R.id.statusText)
         shizukuStatusIndicator = findViewById(R.id.shizukuStatusIndicator)
         shizukuButtonsRow = findViewById(R.id.shizukuButtonsRow)
@@ -328,6 +536,12 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         keyboardStatusIcon = findViewById(R.id.keyboardStatusIcon)
         keyboardStatusText = findViewById(R.id.keyboardStatusText)
         enableKeyboardBtn = findViewById(R.id.enableKeyboardBtn)
+
+        // Accessibility permission views
+        accessibilityCard = findViewById(R.id.accessibilityCard)
+        accessibilityStatusIcon = findViewById(R.id.accessibilityStatusIcon)
+        accessibilityStatusText = findViewById(R.id.accessibilityStatusText)
+        requestAccessibilityBtn = findViewById(R.id.requestAccessibilityBtn)
 
         // Task input views
         taskInputLayout = findViewById(R.id.taskInputLayout)
@@ -359,7 +573,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
             openShizukuApp()
         }
 
-        // Settings button
+        // Settings button - Requirements: 6.1
         settingsBtn.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
@@ -385,16 +599,23 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
             com.kevinluo.autoglm.input.KeyboardHelper.openInputMethodSettings(this)
         }
 
-        // Start task button
+        // Accessibility permission button
+        requestAccessibilityBtn.setOnClickListener {
+            // Open accessibility settings
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
+        }
+
+        // Start task button - Requirements: 1.1
         startTaskBtn.setOnClickListener {
             startTask()
         }
 
-        // Cancel task button
+        // Cancel task button - Requirements: 1.4
         cancelTaskBtn.setOnClickListener {
             cancelTask()
         }
-        
+
         // Select template button
         btnSelectTemplate.setOnClickListener {
             showTemplateSelectionDialog()
@@ -404,7 +625,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         taskInput.setOnFocusChangeListener { _, _ ->
             updateTaskButtonStates()
         }
-        
+
         // Watch for text changes to enable/disable start button
         taskInput.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -541,7 +762,17 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         Shizuku.addBinderReceivedListenerSticky(binderReceivedListener)
         Shizuku.addBinderDeadListener(binderDeadListener)
     }
-    
+
+    /**
+     * Sets up accessibility state change listener.
+     *
+     * Registers listener to detect when accessibility service is enabled/disabled.
+     */
+    private fun setupAccessibilityListener() {
+        val accessibilityManager = getSystemService(ACCESSIBILITY_SERVICE) as? AccessibilityManager
+        accessibilityManager?.addAccessibilityStateChangeListener(accessibilityStateChangeListener)
+    }
+
     /**
      * Opens the Shizuku app or Play Store if not installed.
      *
@@ -573,23 +804,24 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      * Called after UserService is connected. Sets up the agent listener
      * and confirmation callback for sensitive operations.
      *
+     * Requirements: 1.1, 2.1, 2.2
      */
     private fun initializePhoneAgent() {
         if (!componentManager.isServiceConnected) {
             Logger.w(TAG, "Cannot initialize PhoneAgent: service not connected")
             return
         }
-        
+
         // Set up listener
         componentManager.setPhoneAgentListener(this)
-        
+
         // Setup confirmation callback
         setupConfirmationCallback()
-        
+
         updateTaskButtonStates()
         Logger.i(TAG, "PhoneAgent initialized successfully")
     }
-    
+
     /**
      * Sets up the confirmation callback for sensitive operations.
      *
@@ -635,31 +867,50 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      * Validates the task description, checks agent state, starts the
      * floating window service, and launches the task in a coroutine.
      *
+     * Requirements: 1.1, 2.1, 2.2
      */
     private fun startTask() {
         val taskDescription = taskInput.text?.toString()?.trim() ?: ""
-        
+
         // Validate task description
         if (taskDescription.isBlank()) {
             Toast.makeText(this, R.string.toast_task_empty, Toast.LENGTH_SHORT).show()
             taskInputLayout.error = getString(R.string.toast_task_empty)
             return
         }
-        
+
         taskInputLayout.error = null
-        
+
         val agent = componentManager.phoneAgent
         if (agent == null) {
             Logger.e(TAG, "PhoneAgent not initialized")
+            Toast.makeText(this, "Device controller not initialized. Please check your settings.", Toast.LENGTH_SHORT).show()
             return
         }
-        
+
         // Check if already running
         if (agent.isRunning()) {
             Logger.w(TAG, "Task already running")
             return
         }
-        
+
+        // Check device controller permissions
+        val deviceController = componentManager.deviceControllerInstance
+        if (deviceController != null && !deviceController.checkPermission()) {
+            val mode = deviceController.getMode()
+            val message = when (mode) {
+                com.kevinluo.autoglm.device.DeviceControlMode.ACCESSIBILITY -> {
+                    "Accessibility service not enabled. Please enable it in system settings."
+                }
+                com.kevinluo.autoglm.device.DeviceControlMode.SHIZUKU -> {
+                    "Shizuku service not connected. Please ensure Shizuku is running."
+                }
+            }
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+            deviceController.requestPermission(this)
+            return
+        }
+
         // Start floating window service if overlay permission granted
         if (FloatingWindowService.canDrawOverlays(this)) {
             Logger.d(TAG, "startTask: Starting floating window service")
@@ -669,7 +920,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
             FloatingWindowService.requestOverlayPermission(this)
             return
         }
-        
+
         // Update UI state - manually set running state since agent.run() hasn't started yet
         updateTaskStatus(TaskStatus.RUNNING)
         // Manually update UI for running state
@@ -677,9 +928,9 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         runningSection.visibility = View.VISIBLE
         cancelTaskBtn.isEnabled = true
         taskInput.isEnabled = false
-        
+
         Logger.i(TAG, "Starting task: $taskDescription")
-        
+
         // Run task in coroutine
         lifecycleScope.launch {
             // Set up callbacks immediately after service starts
@@ -711,15 +962,15 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
                 floatingWindow?.updateStatus(TaskStatus.RUNNING)
                 floatingWindow?.show()
             }
-            
+
             // Minimize app to let agent work
             withContext(Dispatchers.Main) {
                 moveTaskToBack(true)
             }
-            
+
             try {
                 val result = agent.run(taskDescription)
-                
+
                 withContext(Dispatchers.Main) {
                     if (result.success) {
                         Logger.i(TAG, "Task completed: ${result.message}")
@@ -746,26 +997,27 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      * Cancels the agent, resets its state, and updates the UI
      * to reflect the cancelled status.
      *
+     * Requirements: 1.1, 2.1, 2.2
      */
     private fun cancelTask() {
         Logger.i(TAG, "Cancelling task")
-        
+
         // Cancel the agent - this will cancel any ongoing network requests
         componentManager.phoneAgent?.cancel()
-        
+
         // Reset the agent state so it can accept new tasks
         componentManager.phoneAgent?.reset()
-        
+
         Toast.makeText(this, R.string.toast_task_cancelled, Toast.LENGTH_SHORT).show()
         updateTaskStatus(TaskStatus.FAILED)
         updateTaskButtonStates()
-        
+
         // Update floating window to show cancelled state
         // Use the same message as PhoneAgent for consistency
         val cancellationMessage = PhoneAgent.CANCELLATION_MESSAGE
         FloatingWindowService.getInstance()?.showResult(cancellationMessage, false)
     }
-    
+
     /**
      * Pauses the currently running task.
      *
@@ -773,14 +1025,14 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      */
     private fun pauseTask() {
         Logger.i(TAG, "Pausing task")
-        
+
         val paused = componentManager.phoneAgent?.pause() == true
         if (paused) {
             updateTaskStatus(TaskStatus.PAUSED)
             FloatingWindowService.getInstance()?.updateStatus(TaskStatus.PAUSED)
         }
     }
-    
+
     /**
      * Resumes a paused task.
      *
@@ -788,7 +1040,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      */
     private fun resumeTask() {
         Logger.i(TAG, "Resuming task")
-        
+
         val resumed = componentManager.phoneAgent?.resume() == true
         if (resumed) {
             updateTaskStatus(TaskStatus.RUNNING)
@@ -807,15 +1059,15 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         val hasAgent = componentManager.phoneAgent != null
         val hasTaskText = !taskInput.text.isNullOrBlank()
         val isRunning = componentManager.phoneAgent?.isRunning() == true
-        
+
         // Show/hide sections based on running state
         startTaskBtn.visibility = if (isRunning) View.GONE else View.VISIBLE
         runningSection.visibility = if (isRunning) View.VISIBLE else View.GONE
-        
+
         startTaskBtn.isEnabled = hasService && hasAgent && hasTaskText && !isRunning
         cancelTaskBtn.isEnabled = isRunning
         taskInput.isEnabled = !isRunning
-        
+
         Logger.d(
             TAG,
             "Button states updated: service=$hasService, agent=$hasAgent, " +
@@ -831,6 +1083,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      *
      * @param status The new task status to display
      *
+     * Requirements: 1.1, 2.1, 2.2
      */
     private fun updateTaskStatus(status: TaskStatus) {
         val (text, colorRes) = when (status) {
@@ -842,14 +1095,14 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
             TaskStatus.WAITING_CONFIRMATION -> "等待确认" to R.color.status_waiting
             TaskStatus.WAITING_TAKEOVER -> "等待接管" to R.color.status_waiting
         }
-        
+
         taskStatusText.text = text
-        
+
         val drawable = taskStatusIndicator.background as? GradientDrawable
             ?: GradientDrawable().also { taskStatusIndicator.background = it }
         drawable.shape = GradientDrawable.OVAL
         drawable.setColor(ContextCompat.getColor(this, colorRes))
-        
+
         // Also update floating window
         FloatingWindowService.getInstance()?.updateStatus(status)
     }
@@ -863,6 +1116,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      *
      * @param stepNumber The current step number
      *
+     * Requirements: 1.1, 2.1, 2.2
      */
     override fun onStepStarted(stepNumber: Int) {
         runOnUiThread {
@@ -880,6 +1134,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      *
      * @param thinking The model's thinking text
      *
+     * Requirements: 1.1, 2.1, 2.2
      */
     override fun onThinkingUpdate(thinking: String) {
         runOnUiThread {
@@ -894,6 +1149,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      *
      * @param action The action that was executed
      *
+     * Requirements: 1.1, 2.1, 2.2
      */
     override fun onActionExecuted(action: AgentAction) {
         runOnUiThread {
@@ -910,6 +1166,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      *
      * @param message The completion message
      *
+     * Requirements: 1.1, 2.1, 2.2
      */
     override fun onTaskCompleted(message: String) {
         runOnUiThread {
@@ -928,6 +1185,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      *
      * @param error The error message
      *
+     * Requirements: 1.1, 2.1, 2.2
      */
     override fun onTaskFailed(error: String) {
         runOnUiThread {
@@ -943,6 +1201,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      *
      * Note: Floating window hide is handled by ScreenshotService.
      *
+     * Requirements: 1.1, 2.1, 2.2
      */
     override fun onScreenshotStarted() {
         // Floating window hide is handled by ScreenshotService
@@ -953,6 +1212,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      *
      * Note: Floating window show is handled by ScreenshotService.
      *
+     * Requirements: 1.1, 2.1, 2.2
      */
     override fun onScreenshotCompleted() {
         // Floating window show is handled by ScreenshotService
@@ -972,7 +1232,22 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
 
     // endregion
 
-    // region Shizuku Methods
+    // region Device Service Status Methods
+
+    /**
+     * Updates the device service status display based on current control mode.
+     *
+     * For Shizuku mode: shows Shizuku connection status.
+     * For Accessibility mode: shows Accessibility service status.
+     */
+    private fun updateDeviceServiceStatus() {
+        val controlMode = componentManager.settingsManager.getDeviceControlMode()
+
+        when (controlMode) {
+            DeviceControlMode.SHIZUKU -> updateShizukuStatusDisplay()
+            DeviceControlMode.ACCESSIBILITY -> updateAccessibilityStatusDisplay()
+        }
+    }
 
     /**
      * Updates the Shizuku connection status display.
@@ -980,7 +1255,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      * Checks Shizuku binder status, permission, and service connection,
      * then updates the UI to reflect the current state.
      */
-    private fun updateShizukuStatus() {
+    private fun updateShizukuStatusDisplay() {
         val isBinderAlive = try {
             Shizuku.pingBinder()
         } catch (e: Exception) {
@@ -996,7 +1271,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
             !serviceConnected -> getString(R.string.shizuku_status_connecting)
             else -> getString(R.string.shizuku_status_connected)
         }
-        
+
         val statusColor = when {
             !isBinderAlive -> R.color.status_failed
             !hasPermission -> R.color.status_waiting
@@ -1007,7 +1282,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
         runOnUiThread {
             statusText.text = statusMessage
             shizukuStatusIndicator.background.setTint(getColor(statusColor))
-            
+
             // Show buttons based on Shizuku state
             if (serviceConnected) {
                 // Connected - hide buttons row
@@ -1021,7 +1296,40 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
                 requestPermissionBtn.visibility = View.VISIBLE
                 requestPermissionBtn.isEnabled = isBinderAlive
             }
-            
+
+            updateTaskButtonStates()
+        }
+    }
+
+    /**
+     * Updates the Accessibility service status display.
+     *
+     * Shows the accessibility service connection status in the same location
+     * where Shizuku status is normally displayed.
+     */
+    private fun updateAccessibilityStatusDisplay() {
+        val isAccessibilityEnabled = AutoGLMAccessibilityService.isEnabled()
+        val isAndroidSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+
+        val statusMessage = when {
+            !isAndroidSupported -> getString(R.string.accessibility_not_supported)
+            !isAccessibilityEnabled -> getString(R.string.accessibility_permission_denied)
+            else -> getString(R.string.accessibility_permission_granted)
+        }
+
+        val statusColor = when {
+            !isAndroidSupported -> R.color.status_failed
+            !isAccessibilityEnabled -> R.color.status_waiting
+            else -> R.color.status_running
+        }
+
+        runOnUiThread {
+            statusText.text = statusMessage
+            shizukuStatusIndicator.background.setTint(getColor(statusColor))
+
+            // Hide Shizuku buttons in accessibility mode
+            shizukuButtonsRow.visibility = View.GONE
+
             updateTaskButtonStates()
         }
     }
@@ -1098,9 +1406,9 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
     private fun formatAction(action: AgentAction): String = action.formatForDisplay()
 
     // endregion
-    
+
     // region Task Templates
-    
+
     /**
      * Shows a dialog to select a task template.
      *
@@ -1109,7 +1417,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      */
     private fun showTemplateSelectionDialog() {
         val templates = componentManager.settingsManager.getTaskTemplates()
-        
+
         if (templates.isEmpty()) {
             Toast.makeText(this, R.string.settings_no_templates, Toast.LENGTH_SHORT).show()
             // Offer to go to settings to add templates
@@ -1123,9 +1431,9 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
                 .show()
             return
         }
-        
+
         val templateNames = templates.map { it.name }.toTypedArray()
-        
+
         AlertDialog.Builder(this)
             .setTitle(R.string.task_select_template)
             .setItems(templateNames) { _, which ->
@@ -1136,7 +1444,7 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
             .setNegativeButton(R.string.dialog_cancel, null)
             .show()
     }
-    
+
     // endregion
 
     companion object {

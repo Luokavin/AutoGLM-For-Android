@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.kevinluo.autoglm.R
 import com.kevinluo.autoglm.agent.AgentConfig
+import com.kevinluo.autoglm.device.DeviceControlMode
 import com.kevinluo.autoglm.model.ModelClient
 import com.kevinluo.autoglm.model.ModelConfig
 import com.kevinluo.autoglm.util.LogFileManager
@@ -41,7 +42,12 @@ import kotlinx.coroutines.launch
 class SettingsActivity : AppCompatActivity() {
     
     private lateinit var settingsManager: SettingsManager
-    
+
+    // Device control mode views
+    private lateinit var controlModeRadioGroup: RadioGroup
+    private lateinit var controlModeShizuku: RadioButton
+    private lateinit var controlModeAccessibility: RadioButton
+
     // Profile selector views
     private lateinit var profileSelectorLayout: TextInputLayout
     private lateinit var profileSelector: AutoCompleteTextView
@@ -115,6 +121,11 @@ class SettingsActivity : AppCompatActivity() {
      * Initializes all view references.
      */
     private fun initViews() {
+        // Device control mode
+        controlModeRadioGroup = findViewById(R.id.controlModeRadioGroup)
+        controlModeShizuku = findViewById(R.id.controlModeShizuku)
+        controlModeAccessibility = findViewById(R.id.controlModeAccessibility)
+
         // Profile selector
         profileSelectorLayout = findViewById(R.id.profileSelectorLayout)
         profileSelector = findViewById(R.id.profileSelector)
@@ -177,7 +188,14 @@ class SettingsActivity : AppCompatActivity() {
         Logger.d(TAG, "Loading current settings")
         val modelConfig = settingsManager.getModelConfig()
         val agentConfig = settingsManager.getAgentConfig()
-        
+        val controlMode = settingsManager.getDeviceControlMode()
+
+        // Load device control mode
+        when (controlMode) {
+            DeviceControlMode.SHIZUKU -> controlModeShizuku.isChecked = true
+            DeviceControlMode.ACCESSIBILITY -> controlModeAccessibility.isChecked = true
+        }
+
         // Load saved profiles
         loadSavedProfiles()
         
@@ -316,6 +334,16 @@ class SettingsActivity : AppCompatActivity() {
         modelNameInput.setOnFocusChangeListener { _, _ -> modelNameLayout.error = null }
         maxStepsInput.setOnFocusChangeListener { _, _ -> maxStepsLayout.error = null }
         screenshotDelayInput.setOnFocusChangeListener { _, _ -> screenshotDelayLayout.error = null }
+
+        // Device control mode change listener
+        controlModeRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            val newMode = when (checkedId) {
+                R.id.controlModeShizuku -> DeviceControlMode.SHIZUKU
+                R.id.controlModeAccessibility -> DeviceControlMode.ACCESSIBILITY
+                else -> return@setOnCheckedChangeListener
+            }
+            Logger.d(TAG, "Device control mode changed to: ${newMode.name}")
+        }
     }
     
     /**
@@ -585,14 +613,22 @@ class SettingsActivity : AppCompatActivity() {
         Logger.i(TAG, "Saving settings")
         val baseUrl = baseUrlInput.text?.toString()?.trim() ?: ""
         val modelName = modelNameInput.text?.toString()?.trim() ?: ""
-        val apiKey = apiKeyInput.text?.toString()?.trim().let { 
-            if (it.isNullOrEmpty()) "EMPTY" else it 
+        val apiKey = apiKeyInput.text?.toString()?.trim().let {
+            if (it.isNullOrEmpty()) "EMPTY" else it
         }
         val maxSteps = maxStepsInput.text?.toString()?.trim()?.toIntOrNull() ?: 100
         val screenshotDelaySeconds = screenshotDelayInput.text?.toString()?.trim()?.toDoubleOrNull() ?: 2.0
         val screenshotDelayMs = (screenshotDelaySeconds * 1000).toLong()
         val language = if (languageEnglish.isChecked) "en" else "cn"
-        
+
+        // Save device control mode
+        val controlMode = when (controlModeRadioGroup.checkedRadioButtonId) {
+            R.id.controlModeShizuku -> DeviceControlMode.SHIZUKU
+            R.id.controlModeAccessibility -> DeviceControlMode.ACCESSIBILITY
+            else -> DeviceControlMode.SHIZUKU
+        }
+        settingsManager.saveDeviceControlMode(controlMode)
+
         // Create and save model config
         val modelConfig = ModelConfig(
             baseUrl = baseUrl,
@@ -600,7 +636,7 @@ class SettingsActivity : AppCompatActivity() {
             modelName = modelName
         )
         settingsManager.saveModelConfig(modelConfig)
-        
+
         // Create and save agent config
         val agentConfig = AgentConfig(
             maxSteps = maxSteps,
@@ -608,7 +644,7 @@ class SettingsActivity : AppCompatActivity() {
             screenshotDelayMs = screenshotDelayMs
         )
         settingsManager.saveAgentConfig(agentConfig)
-        
+
         Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show()
         finish()
     }

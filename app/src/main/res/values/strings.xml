@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">AutoGLM For Android</string>
-    
+
     <!-- Shizuku Status -->
     <string name="shizuku_status_title">Shizuku 状态</string>
     <string name="shizuku_status_unknown">未知</string>
@@ -10,26 +10,26 @@
     <string name="shizuku_status_connected">已连接</string>
     <string name="request_shizuku_permission">授权</string>
     <string name="open_shizuku">打开 Shizuku</string>
-    
+
     <!-- Overlay Permission -->
     <string name="overlay_permission_title">悬浮窗权限</string>
     <string name="overlay_permission_granted">已授权</string>
     <string name="overlay_permission_denied">未授权</string>
     <string name="request_overlay_permission">授权</string>
-    
+
     <!-- AutoGLM Keyboard -->
     <string name="keyboard_title">输入法</string>
     <string name="keyboard_enabled">已启用</string>
     <string name="keyboard_not_enabled">未启用</string>
     <string name="enable_keyboard">去启用</string>
     <string name="toast_keyboard_required">需要启用 AutoGLM Keyboard 才能输入文字</string>
-    
+
     <!-- Task Section -->
     <string name="task_section_label">任务输入</string>
     <string name="task_input_hint">描述你想要执行的任务...</string>
     <string name="start_task">启动</string>
     <string name="cancel_task">停止</string>
-    
+
     <!-- Task Status -->
     <string name="task_status_label">状态</string>
     <string name="task_status_idle">空闲</string>
@@ -42,12 +42,12 @@
     <string name="step_counter_format">步骤: %d</string>
     <string name="pause_task">暂停</string>
     <string name="resume_task">继续</string>
-    
+
     <!-- Output Section -->
     <string name="output_section_label">执行日志</string>
     <string name="output_description">查看任务执行的详细日志</string>
     <string name="output_placeholder">日志将显示在这里...</string>
-    
+
     <!-- Toast Messages -->
     <string name="toast_shizuku_not_running">请先启动 Shizuku</string>
     <string name="toast_shizuku_version_low">Shizuku 版本过低</string>
@@ -61,7 +61,8 @@
     <string name="toast_task_started">任务已开始</string>
     <string name="toast_task_cancelled">任务已取消</string>
     <string name="toast_overlay_permission_required">需要悬浮窗权限</string>
-    
+    <string name="toast_notification_permission_required">后台服务需要通知权限</string>
+
     <!-- Settings Activity -->
     <string name="settings_title">设置</string>
     <string name="settings_model_section">模型配置</string>
@@ -108,7 +109,7 @@
     <string name="settings_test_connection_error">连接失败: %s</string>
     <string name="settings_test_timeout">连接超时: %s</string>
     <string name="settings_test_invalid_config">请先填写完整的配置信息</string>
-    
+
     <!-- Task Templates -->
     <string name="settings_task_templates">任务模板</string>
     <string name="settings_task_templates_description">保存常用任务，快速填入</string>
@@ -124,7 +125,7 @@
     <string name="settings_delete_template_confirm">确定要删除此模板吗？</string>
     <string name="settings_no_templates">暂无模板</string>
     <string name="task_select_template">选择模板</string>
-    
+
     <!-- Advanced Settings -->
     <string name="settings_advanced">高级设置</string>
     <string name="settings_advanced_description">自定义系统提示词</string>
@@ -139,7 +140,7 @@
     <string name="settings_system_prompt_reset_done">已重置为默认提示词</string>
     <string name="settings_system_prompt_custom">已自定义</string>
     <string name="settings_system_prompt_default">默认</string>
-    
+
     <!-- Dialog Strings -->
     <string name="dialog_confirm_title">确认操作</string>
     <string name="dialog_confirm_message">确定要执行此操作吗？</string>
@@ -147,13 +148,13 @@
     <string name="dialog_cancel">取消</string>
     <string name="dialog_choose_option">选择选项</string>
     <string name="dialog_select_option">请选择以下选项之一</string>
-    
+
     <!-- Takeover Prompt -->
     <string name="takeover_title">需要手动操作</string>
     <string name="takeover_message">请完成以下操作</string>
     <string name="takeover_instructions_placeholder">操作说明将显示在这里</string>
     <string name="takeover_continue">已完成，继续</string>
-    
+
     <!-- Floating Window -->
     <string name="floating_thinking_label">思考</string>
     <string name="floating_action_label">操作</string>
@@ -164,15 +165,15 @@
     <string name="floating_waiting_confirm">等待确认</string>
     <string name="floating_open">打开悬浮窗</string>
     <string name="floating_new_task">新任务</string>
-    
+
     <!-- Quick Actions -->
     <string name="quick_action_floating">悬浮窗</string>
     <string name="quick_action_history">历史记录</string>
-    
+
     <!-- Quick Settings Tile -->
     <string name="tile_floating_window">AutoGLM</string>
     <string name="tile_floating_window_desc">显示/隐藏悬浮窗</string>
-    
+
     <!-- History -->
     <string name="history_title">历史记录</string>
     <string name="history_detail_title">任务详情</string>
@@ -204,7 +205,7 @@
     <string name="history_prompt_copied">提示词已复制到剪贴板</string>
     <string name="history_load_more">加载更多</string>
     <string name="history_load_more_count">加载更多 (剩余 %d 步)</string>
-    
+
     <!-- Debug Logs -->
     <string name="settings_debug_logs">调试日志</string>
     <string name="settings_debug_logs_description">导出日志用于问题排查</string>
@@ -215,11 +216,28 @@
     <string name="settings_logs_export_failed">导出失败</string>
     <string name="settings_logs_empty">暂无日志</string>
     <string name="settings_clear_logs_confirm">确定要清空所有日志吗？</string>
-    
+
     <!-- AutoGLM Keyboard -->
     <string name="keyboard_name">AutoGLM Keyboard</string>
     <string name="keyboard_status_ready">就绪</string>
     <string name="keyboard_hint">文本输入由 AutoGLM 控制</string>
     <string name="keyboard_settings_title">AutoGLM 键盘</string>
     <string name="keyboard_settings_subtitle">已启用</string>
+
+    <!-- Accessibility Service -->
+    <string name="accessibility_service_description">AutoGLM 无障碍服务，用于辅助残障人士进行设备自动化控制。</string>
+    <string name="accessibility_permission_title">无障碍权限</string>
+    <string name="accessibility_permission_granted">已开启</string>
+    <string name="accessibility_permission_denied">未开启</string>
+    <string name="request_accessibility_permission">去开启</string>
+    <string name="accessibility_not_supported">无障碍模式不支持 Android 13 以下版本</string>
+
+    <!-- Device Control Mode -->
+    <string name="device_control_mode_title">设备控制模式</string>
+    <string name="device_control_mode_description">选择控制设备的方式</string>
+    <string name="device_control_mode_shizuku">Shizuku（推荐）</string>
+    <string name="device_control_mode_accessibility">无障碍服务</string>
+    <string name="device_control_mode_shizuku_desc">需要安装 Shizuku 应用，功能完整，兼容性好</string>
+    <string name="device_control_mode_accessibility_desc">无需安装额外应用，需要 Android 13+</string>
+    <string name="device_control_mode_changed">控制模式已更改，请重启应用以生效</string>
 </resources>

@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.kevinluo.autoglm.agent.AgentConfig
+import com.kevinluo.autoglm.device.DeviceControlMode
 import com.kevinluo.autoglm.model.ModelConfig
 import com.kevinluo.autoglm.util.Logger
 import org.json.JSONArray
@@ -95,7 +96,10 @@ class SettingsManager(private val context: Context) {
         
         // Dev profiles import key
         private const val KEY_DEV_PROFILES_IMPORTED = "dev_profiles_imported"
-        
+
+        // Device control mode key
+        private const val KEY_DEVICE_CONTROL_MODE = "device_control_mode"
+
         // Default values
         private val DEFAULT_MODEL_CONFIG = ModelConfig()
         private val DEFAULT_AGENT_CONFIG = AgentConfig()
@@ -104,6 +108,7 @@ class SettingsManager(private val context: Context) {
     // Cache for detecting config changes
     private var lastModelConfig: ModelConfig? = null
     private var lastAgentConfig: AgentConfig? = null
+    private var lastDeviceControlMode: DeviceControlMode? = null
     
     // Regular preferences for non-sensitive data
     private val prefs: SharedPreferences by lazy {
@@ -285,13 +290,17 @@ class SettingsManager(private val context: Context) {
     fun hasConfigChanged(): Boolean {
         val currentModelConfig = getModelConfig()
         val currentAgentConfig = getAgentConfig()
-        
-        val changed = lastModelConfig != currentModelConfig || lastAgentConfig != currentAgentConfig
-        
+        val currentDeviceControlMode = getDeviceControlMode()
+
+        val changed = lastModelConfig != currentModelConfig ||
+                      lastAgentConfig != currentAgentConfig ||
+                      lastDeviceControlMode != currentDeviceControlMode
+
         // Update cache
         lastModelConfig = currentModelConfig
         lastAgentConfig = currentAgentConfig
-        
+        lastDeviceControlMode = currentDeviceControlMode
+
         return changed
     }
     
@@ -688,5 +697,43 @@ class SettingsManager(private val context: Context) {
             Logger.e(TAG, "Failed to import dev profiles", e)
             -1
         }
+    }
+
+    // ==================== Device Control Mode ====================
+
+    /**
+     * Gets the current device control mode.
+     *
+     * Returns SHIZUKU as default if not previously set.
+     *
+     * @return The current device control mode
+     */
+    fun getDeviceControlMode(): DeviceControlMode {
+        val modeName = prefs.getString(KEY_DEVICE_CONTROL_MODE, DeviceControlMode.SHIZUKU.name)
+        return try {
+            DeviceControlMode.valueOf(modeName ?: DeviceControlMode.SHIZUKU.name)
+        } catch (e: Exception) {
+            Logger.w(TAG, "Invalid device control mode: $modeName, using SHIZUKU")
+            DeviceControlMode.SHIZUKU
+        }
+    }
+
+    /**
+     * Saves the device control mode.
+     *
+     * @param mode The device control mode to save
+     */
+    fun saveDeviceControlMode(mode: DeviceControlMode) {
+        Logger.d(TAG, "Saving device control mode: ${mode.name}")
+        prefs.edit().putString(KEY_DEVICE_CONTROL_MODE, mode.name).apply()
+    }
+
+    /**
+     * Gets the display name of the current device control mode.
+     *
+     * @return The display name (e.g., "Shizuku" or "无障碍服务")
+     */
+    fun getDeviceControlModeDisplayName(): String {
+        return getDeviceControlMode().displayName
     }
 }

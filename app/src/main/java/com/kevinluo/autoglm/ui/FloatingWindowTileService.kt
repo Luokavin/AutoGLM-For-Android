@@ -47,7 +47,7 @@ class FloatingWindowTileService : TileService() {
         }
         startActivityAndCollapseCompat(intent)
     }
-    
+
     /**
      * Compatibility wrapper for startActivityAndCollapse.
      * API 34+ requires PendingIntent, older versions use Intent directly.
@@ -64,7 +64,7 @@ class FloatingWindowTileService : TileService() {
             startActivityAndCollapse(pendingIntent)
         } else {
             // API < 34
-            @Suppress("DEPRECATION")
+            @Suppress("StartActivityAndCollapseDeprecated")
             startActivityAndCollapse(intent)
         }
     }
@@ -88,14 +88,14 @@ class FloatingWindowTileService : TileService() {
 
     private fun updateTileState() {
         val tile = qsTile ?: return
-        
+
         val service = FloatingWindowService.getInstance()
         val isVisible = service?.isVisible() == true
-        
+
         tile.state = if (isVisible) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
         tile.label = getString(com.kevinluo.autoglm.R.string.tile_floating_window)
         tile.contentDescription = getString(com.kevinluo.autoglm.R.string.tile_floating_window_desc)
-        
+
         tile.updateTile()
     }
 

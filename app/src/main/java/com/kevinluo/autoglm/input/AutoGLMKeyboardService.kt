@@ -47,7 +47,7 @@ class AutoGLMKeyboardService : InputMethodService() {
     private val inputReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             Logger.d(TAG, "Received broadcast: ${intent.action}")
-            
+
             when (intent.action) {
                 ACTION_INPUT_TEXT, ACTION_INPUT_B64 -> {
                     handleInputText(intent)
@@ -90,13 +90,13 @@ class AutoGLMKeyboardService : InputMethodService() {
      */
     override fun onCreateInputView(): View {
         Logger.d(TAG, "onCreateInputView called")
-        
+
         // Register receiver when input view is created
         registerInputReceiver()
-        
+
         // Create a minimal status view
         val view = layoutInflater.inflate(R.layout.keyboard_autoglm, null)
-        
+
         return view
     }
 
@@ -122,7 +122,7 @@ class AutoGLMKeyboardService : InputMethodService() {
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         Logger.d(TAG, "onStartInputView: restarting=$restarting")
-        
+
         // Ensure receiver is registered
         registerInputReceiver()
     }
@@ -165,7 +165,7 @@ class AutoGLMKeyboardService : InputMethodService() {
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                registerReceiver(inputReceiver, filter, Context.RECEIVER_EXPORTED)
+                registerReceiver(inputReceiver, filter, RECEIVER_EXPORTED)
             } else {
                 @Suppress("UnspecifiedRegisterReceiverFlag")
                 registerReceiver(inputReceiver, filter)
@@ -211,7 +211,7 @@ class AutoGLMKeyboardService : InputMethodService() {
             val decodedBytes = Base64.decode(encodedText, Base64.DEFAULT)
             val text = String(decodedBytes, Charsets.UTF_8)
             Logger.d(TAG, "Decoded text: '${text.take(50)}${if (text.length > 50) "..." else ""}'")
-            
+
             commitText(text)
         } catch (e: Exception) {
             Logger.e(TAG, "Failed to decode Base64 text", e)
@@ -240,7 +240,7 @@ class AutoGLMKeyboardService : InputMethodService() {
      */
     private fun handleClearText() {
         Logger.d(TAG, "Clearing text")
-        
+
         val ic = currentInputConnection ?: run {
             Logger.w(TAG, "No input connection for clear text")
             return
@@ -249,10 +249,10 @@ class AutoGLMKeyboardService : InputMethodService() {
         try {
             // Perform select all
             ic.performContextMenuAction(android.R.id.selectAll)
-            
+
             // Delete selected text by committing empty string
             ic.commitText("", 0)
-            
+
             Logger.d(TAG, "Text cleared successfully")
         } catch (e: Exception) {
             Logger.e(TAG, "Failed to clear text", e)

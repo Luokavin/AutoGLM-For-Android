@@ -1,6 +1,7 @@
 package com.kevinluo.autoglm.input
 
 import android.util.Base64
+import com.kevinluo.autoglm.BuildConfig
 import com.kevinluo.autoglm.IUserService
 import com.kevinluo.autoglm.util.Logger
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +37,7 @@ class TextInputManager(private val userService: IUserService) {
 
     /** Cached original IME for restoration after text input. */
     private var originalIme: String? = null
-    
+
     /**
      * Types text into the currently focused input field.
      *
@@ -112,11 +113,11 @@ class TextInputManager(private val userService: IUserService) {
         // Save original IME
         originalIme = currentIme
         Logger.d(TAG, "Saved original IME: $originalIme")
-        
+
         // List all enabled IMEs to debug
         val enabledImes = shell("ime list -s")
         Logger.d(TAG, "Enabled IMEs:\n$enabledImes")
-        
+
         // Get the IME ID
         val imeId = KeyboardHelper.IME_ID
         Logger.d(TAG, "AutoGLM Keyboard IME ID: $imeId")
@@ -153,7 +154,7 @@ class TextInputManager(private val userService: IUserService) {
         val newIme = getCurrentIme()
         return KeyboardHelper.isAutoGLMKeyboard(newIme)
     }
-    
+
     /**
      * Gets the current default input method.
      *
@@ -173,7 +174,7 @@ class TextInputManager(private val userService: IUserService) {
      */
     private fun clearText(): String {
         Logger.d(TAG, "Clearing text")
-        return shell("am broadcast -a $ACTION_CLEAR_TEXT -p $PACKAGE_NAME")
+        return shell("am broadcast -a $ACTION_CLEAR_TEXT -p $PACKAGE_NAME --user current")
     }
 
     /**
@@ -192,7 +193,7 @@ class TextInputManager(private val userService: IUserService) {
     private fun inputTextViaB64(text: String): String {
         val encoded = Base64.encodeToString(text.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
         Logger.d(TAG, "Input text via B64: '$text' -> '$encoded'")
-        return shell("am broadcast -a $ACTION_INPUT_B64 -p $PACKAGE_NAME --es msg '$encoded'")
+        return shell("am broadcast -a $ACTION_INPUT_B64 -p $PACKAGE_NAME --es msg '$encoded' --user current")
     }
 
     /**
@@ -232,9 +233,9 @@ class TextInputManager(private val userService: IUserService) {
         // Broadcast actions
         private const val ACTION_INPUT_B64 = "ADB_INPUT_B64"
         private const val ACTION_CLEAR_TEXT = "ADB_CLEAR_TEXT"
-        
+
         // Package name
-        private const val PACKAGE_NAME = "com.kevinluo.autoglm"
+        private const val PACKAGE_NAME = BuildConfig.APPLICATION_ID
 
         // Timing constants (increased for stability)
         // Wait after switching keyboard to ensure it's fully active
