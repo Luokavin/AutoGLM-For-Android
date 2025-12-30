@@ -40,50 +40,6 @@ class AutoGLMApplication : Application() {
 
         // Load custom system prompts if set
         loadCustomSystemPrompts()
-
-        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
-            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-                // No action needed
-            }
-
-            override fun onActivityStarted(activity: Activity) {
-                activityCount++
-                Logger.d(TAG, "Activity started: ${activity.localClassName}, count: $activityCount")
-
-                // App came to foreground - hide floating window
-                if (activityCount == 1) {
-                    Logger.d(TAG, "App in foreground - hiding floating window")
-                    FloatingWindowService.getInstance()?.hide()
-                }
-            }
-
-            override fun onActivityResumed(activity: Activity) {
-                // No action needed
-            }
-
-            override fun onActivityPaused(activity: Activity) {
-                // No action needed
-            }
-
-            override fun onActivityStopped(activity: Activity) {
-                activityCount--
-                Logger.d(TAG, "Activity stopped: ${activity.localClassName}, count: $activityCount")
-
-                // App went to background - show floating window
-                if (activityCount == 0) {
-                    Logger.d(TAG, "App in background - showing floating window")
-                    FloatingWindowService.getInstance()?.show()
-                }
-            }
-
-            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
-                // No action needed
-            }
-
-            override fun onActivityDestroyed(activity: Activity) {
-                // No action needed
-            }
-        })
     }
 
     /**

@@ -37,19 +37,16 @@ import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
 
 /**
- * Main activity for the AutoGLM Phone Agent application.
+ * AutoGLM Phone Agent 应用程序的主活动 (Activity)。
  *
- * This activity serves as the primary entry point for the application,
- * providing the main user interface for:
- * - Shizuku permission management and service binding
- * - Task input and execution control
- * - Task status display and step tracking
- * - Navigation to settings and history
- * - Floating window management
+ * 此 Activity 作为应用程序的主要入口点，提供以下主要用户界面：
+ * - Shizuku 权限管理和服务绑定
+ * - 任务输入和执行控制
+ * - 任务状态显示和步骤跟踪
+ * - 导航至设置和历史记录
+ * - 悬浮窗管理
  *
- * The activity implements [PhoneAgentListener] to receive callbacks
- * during task execution for UI updates.
- *
+ * 该 Activity 实现了 [PhoneAgentListener] 接口，以便在任务执行期间接收回调并更新 UI。
  */
 class MainActivity : AppCompatActivity(), PhoneAgentListener {
 
@@ -981,48 +978,52 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      * then updates the UI to reflect the current state.
      */
     private fun updateShizukuStatus() {
-        val isBinderAlive = try {
-            Shizuku.pingBinder()
-        } catch (e: Exception) {
-            false
-        }
-
-        val hasPermission = hasShizukuPermission()
-        val serviceConnected = componentManager.isServiceConnected
-
-        val statusMessage = when {
-            !isBinderAlive -> getString(R.string.shizuku_status_not_running)
-            !hasPermission -> getString(R.string.shizuku_status_no_permission)
-            !serviceConnected -> getString(R.string.shizuku_status_connecting)
-            else -> getString(R.string.shizuku_status_connected)
-        }
-        
-        val statusColor = when {
-            !isBinderAlive -> R.color.status_failed
-            !hasPermission -> R.color.status_waiting
-            !serviceConnected -> R.color.status_waiting
-            else -> R.color.status_running
-        }
-
-        runOnUiThread {
-            statusText.text = statusMessage
-            shizukuStatusIndicator.background.setTint(getColor(statusColor))
-            
-            // Show buttons based on Shizuku state
-            if (serviceConnected) {
-                // Connected - hide buttons row
-                shizukuButtonsRow.visibility = View.GONE
-            } else {
-                // Not connected - show buttons row
-                shizukuButtonsRow.visibility = View.VISIBLE
-                // Open Shizuku button - always visible when not connected
-                openShizukuBtn.visibility = View.VISIBLE
-                // Permission button - always visible, but disabled when Shizuku not running
-                requestPermissionBtn.visibility = View.VISIBLE
-                requestPermissionBtn.isEnabled = isBinderAlive
+        lifecycleScope.launch(Dispatchers.IO) {
+            val isBinderAlive = try {
+                Shizuku.pingBinder()
+            } catch (e: Exception) {
+                Logger.e(TAG, "Shizuku.pingBinder() failed in updateShizukuStatus", e)
+                false
             }
-            
-            updateTaskButtonStates()
+
+            val hasPermission = hasShizukuPermission()
+            val serviceConnected = componentManager.isServiceConnected
+
+            val statusMessage = when {
+                !isBinderAlive -> getString(R.string.shizuku_status_not_running)
+                !hasPermission -> getString(R.string.shizuku_status_no_permission)
+                !serviceConnected -> getString(R.string.shizuku_status_connecting)
+                else -> getString(R.string.shizuku_status_connected)
+            }
+
+            val statusColor = when {
+                !isBinderAlive -> R.color.status_failed
+                !hasPermission -> R.color.status_waiting
+                !serviceConnected -> R.color.status_waiting
+                else -> R.color.status_running
+            }
+
+            Logger.d(
+                TAG,
+                "updateShizukuStatus: binderAlive=$isBinderAlive, hasPermission=$hasPermission, " +
+                    "serviceConnected=$serviceConnected, message=$statusMessage"
+            )
+
+            withContext(Dispatchers.Main) {
+                statusText.text = statusMessage
+                shizukuStatusIndicator.background.setTint(getColor(statusColor))
+
+                if (serviceConnected) {
+                    shizukuButtonsRow.visibility = View.GONE
+                } else {
+                    shizukuButtonsRow.visibility = View.VISIBLE
+                    openShizukuBtn.visibility = View.VISIBLE
+                    requestPermissionBtn.visibility = View.VISIBLE
+                    requestPermissionBtn.isEnabled = isBinderAlive
+                }
+
+                updateTaskButtonStates()
+            }
         }
     }
 
@@ -1076,7 +1077,14 @@ class MainActivity : AppCompatActivity(), PhoneAgentListener {
      * Attempts to bind the user service if Shizuku permission is granted.
      */
     private fun bindUserService() {
-        if (!hasShizukuPermission()) return
+        if (!hasShizukuPermission()) {
+            Logger.w(TAG, "bindUserService: missing Shizuku permission")
+            return
+        }
+        if (componentManager.isServiceConnected) {
+            Logger.d(TAG, "bindUserService: service already connected, skipping bind")
+            return
+        }
         try {
             Logger.i(TAG, "Binding user service")
             Shizuku.bindUserService(userServiceArgs, userServiceConnection)

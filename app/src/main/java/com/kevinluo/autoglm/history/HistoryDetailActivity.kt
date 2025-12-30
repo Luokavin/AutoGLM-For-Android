@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -14,11 +15,12 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.media.MediaScannerConnection
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -497,9 +499,9 @@ class HistoryDetailActivity : AppCompatActivity() {
         val cacheDir = File(cacheDir, "share")
         if (!cacheDir.exists()) cacheDir.mkdirs()
         
-        val file = File(cacheDir, "autoglm_task_${System.currentTimeMillis()}.webp")
+        val file = File(cacheDir, "autoglm_task_${System.currentTimeMillis()}.png")
         FileOutputStream(file).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         }
         return file
     }
@@ -517,11 +519,18 @@ class HistoryDetailActivity : AppCompatActivity() {
         )
         
         val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "image/webp"
+            type = "image/png"
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            clipData = ClipData.newUri(contentResolver, "AutoGLM Task Image", uri)
         }
         
+        val resolveInfoList = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        for (resolveInfo in resolveInfoList) {
+            val targetPackageName = resolveInfo.activityInfo.packageName
+            grantUriPermission(targetPackageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
         startActivity(Intent.createChooser(intent, getString(R.string.history_share_title)))
     }
     
@@ -534,13 +543,13 @@ class HistoryDetailActivity : AppCompatActivity() {
      * @return True if save was successful, false otherwise
      */
     private fun saveBitmapToGallery(bitmap: Bitmap): Boolean {
-        val filename = "AutoGLM_${System.currentTimeMillis()}.webp"
+        val filename = "AutoGLM_${System.currentTimeMillis()}.png"
         
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // Android 10+ use MediaStore
             val contentValues = ContentValues().apply {
                 put(MediaStore.Images.Media.DISPLAY_NAME, filename)
-                put(MediaStore.Images.Media.MIME_TYPE, "image/webp")
+                put(MediaStore.Images.Media.MIME_TYPE, "image/png")
                 put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/AutoGLM")
                 put(MediaStore.Images.Media.IS_PENDING, 1)
             }
@@ -549,32 +558,37 @@ class HistoryDetailActivity : AppCompatActivity() {
             val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
             
             uri?.let {
-                resolver.openOutputStream(it)?.use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
-                }
+                val wrote = resolver.openOutputStream(it)?.use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                } ?: false
                 
-                contentValues.clear()
-                contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
-                resolver.update(it, contentValues, null, null)
-                true
+                if (wrote) {
+                    contentValues.clear()
+                    contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+                    resolver.update(it, contentValues, null, null)
+                    true
+                } else {
+                    resolver.delete(it, null, null)
+                    false
+                }
             } ?: false
         } else {
-            // Legacy storage
-            @Suppress("DEPRECATION")
-            val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            val picturesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: return false
             val autoglmDir = File(picturesDir, "AutoGLM")
             if (!autoglmDir.exists()) autoglmDir.mkdirs()
-            
+
             val file = File(autoglmDir, filename)
             FileOutputStream(file).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
             }
-            
-            // Notify gallery
-            val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
-            intent.data = android.net.Uri.fromFile(file)
-            sendBroadcast(intent)
-            
+
+            MediaScannerConnection.scanFile(
+                this,
+                arrayOf(file.absolutePath),
+                arrayOf("image/png"),
+                null
+            )
+
             true
         }
     }

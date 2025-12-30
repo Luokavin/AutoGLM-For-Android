@@ -1,5 +1,6 @@
 package com.kevinluo.autoglm.ui
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
@@ -52,6 +53,7 @@ class FloatingWindowTileService : TileService() {
      * Compatibility wrapper for startActivityAndCollapse.
      * API 34+ requires PendingIntent, older versions use Intent directly.
      */
+    @SuppressLint("StartActivityAndCollapseDeprecated")
     private fun startActivityAndCollapseCompat(intent: Intent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             // API 34+

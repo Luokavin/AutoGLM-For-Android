@@ -83,7 +83,6 @@ class ActionHandler(
      */
     private suspend fun hideFloatingWindow() {
         floatingWindowProvider?.invoke()?.hide()
-        delay(WINDOW_HIDE_DELAY_MS)
     }
 
     /**
@@ -93,7 +92,6 @@ class ActionHandler(
      * to restore the floating window visibility.
      */
     private suspend fun showFloatingWindow() {
-        delay(WINDOW_SHOW_DELAY_MS)
         floatingWindowProvider?.invoke()?.show()
     }
 
@@ -225,11 +223,6 @@ class ActionHandler(
         
         return try {
             val result = deviceExecutor.swipe(swipePath.points, swipePath.durationMs)
-            
-            // Wait for swipe animation to complete before showing floating window
-            // The swipe command returns immediately, but the gesture takes time
-            delay(swipePath.durationMs.toLong() + 100)
-            
             if (isDeviceExecutorError(result)) {
                 Logger.w(TAG, "Swipe command failed: $result")
                 ActionResult(false, false, "滑动失败: $result")
@@ -307,39 +300,40 @@ class ActionHandler(
             Logger.d(TAG, "Resolving app name: ${action.app}")
             appResolver.resolvePackageName(action.app)
         }
-        
-        return if (packageName != null) {
-            Logger.i(TAG, "Launching package: $packageName")
-            val launchResult = deviceExecutor.launchApp(packageName)
-            
-            // Check if launch was successful by examining the result
-            val isError = launchResult.contains("Error", ignoreCase = true) ||
-                         launchResult.contains("Exception", ignoreCase = true) ||
-                         launchResult.contains("not found", ignoreCase = true) ||
-                         launchResult.contains("does not exist", ignoreCase = true)
-            
-            if (isError) {
-                Logger.w(TAG, "Launch failed for $packageName: $launchResult")
-                // Launch failed - instruct model to find app icon on screen
+
+        hideFloatingWindow()
+        return try {
+            if (packageName != null) {
+                Logger.i(TAG, "Launching package: $packageName")
+                val launchResult = deviceExecutor.launchApp(packageName)
+
+                val isError = launchResult.contains("Error", ignoreCase = true) ||
+                    launchResult.contains("Exception", ignoreCase = true) ||
+                    launchResult.contains("not found", ignoreCase = true) ||
+                    launchResult.contains("does not exist", ignoreCase = true)
+
+                if (isError) {
+                    Logger.w(TAG, "Launch failed for $packageName: $launchResult")
+                    deviceExecutor.pressKey(DeviceExecutor.KEYCODE_HOME)
+                    ActionResult(
+                        success = true,
+                        shouldFinish = false,
+                        message = "启动应用'$packageName'失败，已返回主屏幕。请在主屏幕或应用列表中查找并点击'${action.app}'应用图标来启动它。"
+                    )
+                } else {
+                    ActionResult(true, false, "启动应用: $packageName")
+                }
+            } else {
+                Logger.i(TAG, "Package not found for '${action.app}', instructing model to find app icon on screen")
                 deviceExecutor.pressKey(DeviceExecutor.KEYCODE_HOME)
                 ActionResult(
-                    success = true,  // Operation itself succeeded, just app not found
+                    success = true,
                     shouldFinish = false,
-                    message = "启动应用'$packageName'失败，已返回主屏幕。请在主屏幕或应用列表中查找并点击'${action.app}'应用图标来启动它。"
+                    message = "找不到应用包名'${action.app}'，已返回主屏幕。请在主屏幕或应用列表中查找并点击'${action.app}'应用图标来启动它。如果主屏幕没有，请上滑打开应用列表查找。"
                 )
-            } else {
-                ActionResult(true, false, "启动应用: $packageName")
             }
-        } else {
-            // Package not found - instruct model to find app icon on screen
-            Logger.i(TAG, "Package not found for '${action.app}', instructing model to find app icon on screen")
-            // Press Home first to go to home screen
-            deviceExecutor.pressKey(DeviceExecutor.KEYCODE_HOME)
-            ActionResult(
-                success = true,
-                shouldFinish = false,
-                message = "找不到应用包名'${action.app}'，已返回主屏幕。请在主屏幕或应用列表中查找并点击'${action.app}'应用图标来启动它。如果主屏幕没有，请上滑打开应用列表查找。"
-            )
+        } finally {
+            showFloatingWindow()
         }
     }
     
@@ -376,18 +370,20 @@ class ActionHandler(
      * actually navigates back instead of just closing the keyboard.
      */
     private suspend fun executeBack(): ActionResult {
-        // First, dismiss keyboard with ESCAPE key to ensure Back actually navigates
-        // If keyboard is shown, the first Back would just close it
-        deviceExecutor.pressKey(111) // KEYCODE_ESCAPE
-        delay(100)
-        
-        // Now press Back to navigate
-        val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_BACK)
-        return if (isDeviceExecutorError(result)) {
-            Logger.w(TAG, "Back key press failed: $result")
-            ActionResult(false, false, "返回键失败: $result")
-        } else {
-            ActionResult(true, false, "返回")
+        hideFloatingWindow()
+        return try {
+            deviceExecutor.pressKey(111) // KEYCODE_ESCAPE
+            delay(100)
+
+            val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_BACK)
+            if (isDeviceExecutorError(result)) {
+                Logger.w(TAG, "Back key press failed: $result")
+                ActionResult(false, false, "返回键失败: $result")
+            } else {
+                ActionResult(true, false, "返回")
+            }
+        } finally {
+            showFloatingWindow()
         }
     }
     
@@ -395,12 +391,17 @@ class ActionHandler(
      * Executes a Home action.
      */
     private suspend fun executeHome(): ActionResult {
-        val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_HOME)
-        return if (isDeviceExecutorError(result)) {
-            Logger.w(TAG, "Home key press failed: $result")
-            ActionResult(false, false, "主页键失败: $result")
-        } else {
-            ActionResult(true, false, "主页")
+        hideFloatingWindow()
+        return try {
+            val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_HOME)
+            if (isDeviceExecutorError(result)) {
+                Logger.w(TAG, "Home key press failed: $result")
+                ActionResult(false, false, "主页键失败: $result")
+            } else {
+                ActionResult(true, false, "主页")
+            }
+        } finally {
+            showFloatingWindow()
         }
     }
     
@@ -408,12 +409,17 @@ class ActionHandler(
      * Executes a VolumeUp action.
      */
     private suspend fun executeVolumeUp(): ActionResult {
-        val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_VOLUME_UP)
-        return if (isDeviceExecutorError(result)) {
-            Logger.w(TAG, "Volume up key press failed: $result")
-            ActionResult(false, false, "音量+键失败: $result")
-        } else {
-            ActionResult(true, false, "音量+")
+        hideFloatingWindow()
+        return try {
+            val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_VOLUME_UP)
+            if (isDeviceExecutorError(result)) {
+                Logger.w(TAG, "Volume up key press failed: $result")
+                ActionResult(false, false, "音量+键失败: $result")
+            } else {
+                ActionResult(true, false, "音量+")
+            }
+        } finally {
+            showFloatingWindow()
         }
     }
     
@@ -421,12 +427,17 @@ class ActionHandler(
      * Executes a VolumeDown action.
      */
     private suspend fun executeVolumeDown(): ActionResult {
-        val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_VOLUME_DOWN)
-        return if (isDeviceExecutorError(result)) {
-            Logger.w(TAG, "Volume down key press failed: $result")
-            ActionResult(false, false, "音量-键失败: $result")
-        } else {
-            ActionResult(true, false, "音量-")
+        hideFloatingWindow()
+        return try {
+            val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_VOLUME_DOWN)
+            if (isDeviceExecutorError(result)) {
+                Logger.w(TAG, "Volume down key press failed: $result")
+                ActionResult(false, false, "音量-键失败: $result")
+            } else {
+                ActionResult(true, false, "音量-")
+            }
+        } finally {
+            showFloatingWindow()
         }
     }
     
@@ -434,12 +445,17 @@ class ActionHandler(
      * Executes a Power action.
      */
     private suspend fun executePower(): ActionResult {
-        val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_POWER)
-        return if (isDeviceExecutorError(result)) {
-            Logger.w(TAG, "Power key press failed: $result")
-            ActionResult(false, false, "电源键失败: $result")
-        } else {
-            ActionResult(true, false, "电源键")
+        hideFloatingWindow()
+        return try {
+            val result = deviceExecutor.pressKey(DeviceExecutor.KEYCODE_POWER)
+            if (isDeviceExecutorError(result)) {
+                Logger.w(TAG, "Power key press failed: $result")
+                ActionResult(false, false, "电源键失败: $result")
+            } else {
+                ActionResult(true, false, "电源键")
+            }
+        } finally {
+            showFloatingWindow()
         }
     }
 
@@ -463,11 +479,6 @@ class ActionHandler(
         
         return try {
             val result = deviceExecutor.longPress(absX, absY, action.durationMs)
-            
-            // Wait for long press to complete before showing floating window
-            // The command returns immediately, but the gesture takes time
-            delay(action.durationMs.toLong() + 100)
-            
             if (isDeviceExecutorError(result)) {
                 Logger.w(TAG, "Long press command failed: $result")
                 ActionResult(false, false, "长按失败: $result")
@@ -634,8 +645,6 @@ class ActionHandler(
 
     companion object {
         private const val TAG = "ActionHandler"
-        private const val WINDOW_HIDE_DELAY_MS = 100L
-        private const val WINDOW_SHOW_DELAY_MS = 50L
 
         /**
          * Checks if a DeviceExecutor result indicates an error.

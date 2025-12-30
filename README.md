@@ -1,351 +1,275 @@
-# AutoGLM For Android
+# AutoPhone
 
 <div align="center">
-<img src="screenshots/logo.svg" width="120"/>
 
-**基于 Open-AutoGLM 的 Android 原生手机智能助手应用**
+**Native Android Phone AI Assistant Based on Open-AutoGLM**
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-7.0%2B-green.svg)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9-purple.svg)](https://kotlinlang.org)
 
-中文 | [English](README_en.md)
+English | [中文](README_CN.md)
 
-</div>
-
-## 📸 应用截图
-
-<div align="center">
-<img src="screenshots/main_screen.jpg" width="200"/>
-<img src="screenshots/settings.jpg" width="200"/>
-<img src="screenshots/settings1.jpg" width="200"/>
-</div>
-
-<div align="center">
-<img src="screenshots/history.jpg" width="200"/>
-<img src="screenshots/history1.jpg" width="200"/>
-<img src="screenshots/floating_window.jpg" width="200"/>
 </div>
 
 ---
 
-## 📖 项目简介
+## 📖 Introduction
 
-AutoGLM For Android 是基于 [Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM) 开源项目二次开发的 Android 原生应用。它将原本需要电脑 + ADB 连接的手机自动化方案，转变为一个独立运行在手机上的 App，让用户可以直接在手机上使用自然语言控制手机完成各种任务。
+AutoPhone is a native Android application developed based on the [Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM) open-source project. It transforms the original phone automation solution that required a computer + ADB connection into a standalone app running directly on the phone, allowing users to control their phone using natural language.
 
-**核心特点：**
-- 🚀 **无需电脑**：直接在手机上运行，无需 ADB 连接
-- 🎯 **自然语言控制**：用自然语言描述任务，AI 自动执行
-- 🔒 **Shizuku 权限**：通过 Shizuku 获取必要的系统权限
-- 🪟 **悬浮窗交互**：悬浮窗实时显示任务执行进度
-- 📱 **原生体验**：Material Design 设计，流畅的原生 Android 体验
-- 🔌 **多模型支持**：兼容任何支持 OpenAI 格式和图片理解的模型 API
+**Key Features:**
+- 🚀 **No Computer Required**: Runs directly on the phone without ADB connection
+- 🎯 **Natural Language Control**: Describe tasks in natural language, AI executes automatically
+- 🔒 **Shizuku Permissions**: Obtains necessary system permissions through Shizuku
+- 🪟 **Floating Window**: Real-time display of task execution progress
+- 📱 **Native Experience**: Material Design, smooth native Android experience
+- 🔌 **Multi-Model Support**: Compatible with any model API supporting OpenAI format and image understanding
 
-## 🏗️ 架构对比
+## 🏗️ Architecture Comparison
 
-| 特性 | Open-AutoGLM (原版) | AutoGLM For Android (本项目) |
-|------|---------------------|------------------------------|
-| 运行环境 | 电脑 (Python) | 手机 (Android App) |
-| 设备连接 | 需要 ADB/USB 连接 | 无需连接，独立运行 |
-| 权限获取 | ADB shell 命令 | Shizuku 服务 |
-| 文本输入 | ADB Keyboard | 内置 AutoGLM Keyboard |
-| 用户界面 | 命令行 | 原生 Android UI + 悬浮窗 |
-| 截图方式 | ADB screencap | Shizuku shell 命令 |
+| Feature | Open-AutoGLM (Original) | AutoPhone (This Project) |
+|---------|-------------------------|-------------------------------------|
+| Runtime | Computer (Python) | Phone (Android App) |
+| Connection | Requires ADB/USB | No connection needed, standalone |
+| Permissions | ADB shell commands | Shizuku service |
+| Text Input | ADB Keyboard | Built-in AutoPhone Keyboard |
+| User Interface | Command line | Native Android UI + Floating Window |
+| Screenshot | ADB screencap | Shizuku shell commands |
 
-## 📋 功能特性
+## 📋 Features
 
-### 核心功能
-- ✅ **任务执行**：输入自然语言任务描述，AI 自动规划并执行
-- ✅ **屏幕理解**：截图 → 视觉模型分析 → 输出操作指令
-- ✅ **多种操作**：点击、滑动、长按、双击、输入文本、启动应用等
-- ✅ **任务控制**：暂停、继续、取消任务执行
-- ✅ **历史记录**：保存任务执行历史，支持查看详情和截图
+### Core Features
+- ✅ **Task Execution**: Input natural language task descriptions, AI automatically plans and executes
+- ✅ **Screen Understanding**: Screenshot → Vision model analysis → Output action commands
+- ✅ **Multiple Actions**: Click, swipe, long press, double tap, text input, launch apps, etc.
+- ✅ **Task Control**: Pause, resume, cancel task execution
+- ✅ **History**: Save task execution history, view details and screenshots
 
-### 用户界面
-- ✅ **主界面**：任务输入、状态显示、快捷操作
-- ✅ **悬浮窗**：实时显示执行步骤、思考过程、操作结果
-- ✅ **设置页面**：模型配置、Agent 参数、多配置管理
-- ✅ **历史页面**：任务历史列表、详情查看、截图标注
+### User Interface
+- ✅ **Main Screen**: Task input, status display, quick actions
+- ✅ **Floating Window**: Real-time display of execution steps, thinking process, action results
+- ✅ **Settings Page**: Model configuration, Agent parameters, multi-profile management
+- ✅ **History Page**: Task history list, detail view, screenshot annotations
 
-### 高级功能
-- ✅ **多模型配置**：支持保存多个模型配置，快速切换
-- ✅ **任务模板**：保存常用任务，一键执行
-- ✅ **自定义 Prompt**：支持自定义系统提示词
-- ✅ **快捷磁贴**：通知栏快捷磁贴，快速打开悬浮窗
-- ✅ **日志导出**：支持导出调试日志，自动脱敏敏感信息
+### Advanced Features
+- ✅ **Multi-Model Profiles**: Save multiple model configurations, quick switching
+- ✅ **Task Templates**: Save frequently used tasks, one-click execution
+- ✅ **Custom Prompts**: Support custom system prompts
+- ✅ **Quick Tile**: Notification bar quick tile, fast access to floating window
 
-## 📱 系统要求
+## 📱 Requirements
 
-- **Android 版本**：Android 7.0 (API 24) 及以上
-- **必需应用**：[Shizuku](https://shizuku.rikka.app/) (用于获取系统权限)
-- **网络连接**：需要连接到模型 API 服务（支持任何 OpenAI 格式兼容的视觉模型）
-- **权限要求**：
-  - 悬浮窗权限 (用于显示悬浮窗)
-  - 网络权限 (用于 API 通信)
-  - Shizuku 权限 (用于执行系统操作)
+- **Android Version**: Android 7.0 (API 24) or higher
+- **Required App**: [Shizuku](https://shizuku.rikka.app/) (for system permissions)
+- **Network**: Connection to model API service (supports any OpenAI-compatible vision model)
+- **Permissions**:
+  - Overlay permission (for floating window)
+  - Network permission (for API communication)
+  - Shizuku permission (for system operations)
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 1. 安装 Shizuku
+### 1. Install Shizuku
 
-Shizuku 是一个让普通应用使用系统 API 的工具，本应用依赖它来执行屏幕操作。
+Shizuku is a tool that allows regular apps to use system APIs. This app relies on it to perform screen operations.
 
-1. 从 [Google Play](https://play.google.com/store/apps/details?id=moe.shizuku.privileged.api) 或 [GitHub](https://github.com/RikkaApps/Shizuku/releases) 下载安装 Shizuku
-2. 启动 Shizuku 并按照指引激活服务：
-   - **无线调试方式** (推荐)：开启开发者选项 → 无线调试 → 配对设备
-   - **ADB 方式**：连接电脑执行 `adb shell sh /storage/emulated/0/Android/data/moe.shizuku.privileged.api/start.sh`
-   - **Root 方式**：如果设备已 Root，直接授权即可
+1. Download and install Shizuku from [Google Play](https://play.google.com/store/apps/details?id=moe.shizuku.privileged.api) or [GitHub](https://github.com/RikkaApps/Shizuku/releases)
+2. Launch Shizuku and follow the guide to activate the service:
+   - **Wireless Debugging** (Recommended): Enable Developer Options → Wireless Debugging → Pair Device
+   - **ADB Method**: Connect to computer and run `adb shell sh /storage/emulated/0/Android/data/moe.shizuku.privileged.api/start.sh`
+   - **Root Method**: If device is rooted, grant permission directly
 
-### 2. 安装 AutoGLM For Android
+### 2. Install AutoPhone
 
-1. 从 [Releases](https://github.com/Luokavin/AutoGLM-For-Android/releases) 下载最新 APK
-2. 安装 APK 并打开应用
-3. 授予 Shizuku 权限（点击"请求权限"按钮）
-4. 授予悬浮窗权限（点击"授予权限"按钮）
-5. 启用 AutoGLM Keyboard（点击"启用键盘"按钮）
+1. Download the latest APK from [Releases](https://github.com/your-repo/releases)
+2. Install the APK and open the app
+3. Grant Shizuku permission (click "Request Permission" button)
+4. Grant overlay permission (click "Grant Permission" button)
+5. Enable AutoPhone Keyboard (click "Enable Keyboard" button)
 
-### 3. 配置模型服务
+### 3. Configure Model Service
 
-进入设置页面，配置模型 API。本应用使用标准的 **OpenAI API 格式**，支持任何兼容该格式且具备图片理解能力的模型。
+Go to Settings and configure the model API. This app uses the standard **OpenAI API format** and supports any model that is compatible with this format and has image understanding capabilities.
 
-**模型要求**：
-- ✅ 兼容 OpenAI `/chat/completions` API 格式
-- ✅ 支持多模态输入（文本 + 图片）
-- ✅ 能够理解屏幕截图并输出操作指令
+**Model Requirements**:
+- ✅ Compatible with OpenAI `/chat/completions` API format
+- ✅ Supports multi-modal input (text + image)
+- ✅ Can understand screenshots and output action commands
 
-**推荐模型配置**：
+**Recommended Model Configurations**:
 
-| 模型服务 | Base URL | Model | 获取 API Key |
+| Service | Base URL | Model | Get API Key |
 |---------|----------|-------|-------------|
-| 智谱 BigModel (推荐) | `https://open.bigmodel.cn/api/paas/v4` | `autoglm-phone` | [智谱开放平台](https://open.bigmodel.cn/) |
+| Zhipu BigModel (Recommended) | `https://open.bigmodel.cn/api/paas/v4` | `autoglm-phone` | [Zhipu Open Platform](https://open.bigmodel.cn/) |
 | ModelScope | `https://api-inference.modelscope.cn/v1` | `ZhipuAI/AutoGLM-Phone-9B` | [ModelScope](https://modelscope.cn/) |
 
-**使用其他第三方模型**：
+**Using Other Third-Party Models**:
 
-只要模型服务满足以下条件，即可在本应用中使用：
+Any model service can be used as long as it meets these requirements:
 
-1. **API 格式兼容**：提供 OpenAI 兼容的 `/chat/completions` 端点
-2. **多模态支持**：支持 `image_url` 格式的图片输入
-3. **图片理解能力**：能够分析屏幕截图并理解 UI 元素
+1. **API Format Compatible**: Provides OpenAI-compatible `/chat/completions` endpoint
+2. **Multi-modal Support**: Supports `image_url` format for image input
+3. **Image Understanding**: Can analyze screenshots and understand UI elements
 
-常见的兼容服务示例：
-- OpenAI GPT-4V / GPT-4o（需要自行适配 prompt）
-- Claude 3 系列（通过兼容层）
-- 其他支持 OpenAI 格式的视觉模型 API
+Examples of compatible services:
+- OpenAI GPT-4V / GPT-4o (may need prompt adaptation)
+- Claude 3 series (via compatibility layer)
+- Other vision model APIs supporting OpenAI format
 
-> ⚠️ **注意**：非 AutoGLM 模型可能需要调整系统提示词才能正确输出操作指令格式。可在设置 → 高级设置中自定义系统提示词。
+> ⚠️ **Note**: Non-AutoGLM models may require custom system prompts to output the correct action format. You can customize the system prompt in Settings → Advanced Settings.
 
-### 4. 开始使用
+### 4. Start Using
 
-1. 在主界面输入任务描述，如："打开微信，给文件传输助手发送消息：测试"
-2. 点击"开始任务"按钮
-3. 悬浮窗会自动弹出，显示执行进度
-4. 观察 AI 的思考过程和执行操作
+1. Enter a task description on the main screen, e.g., "Open WeChat and send a message to File Transfer: test"
+2. Click "Start Task" button
+3. The floating window will automatically appear, showing execution progress
+4. Watch the AI's thinking process and execution actions
 
-## 📖 使用教程
+## 📖 User Guide
 
-### 基本操作
+### Basic Operations
 
-**启动任务**：
-1. 在主界面或悬浮窗输入任务描述
-2. 点击"开始"按钮
-3. 应用会自动截图、分析、执行操作
+**Start a Task**:
+1. Enter task description on the main screen or floating window
+2. Click "Start" button
+3. The app will automatically screenshot, analyze, and execute actions
 
-**控制任务**：
-- **暂停**：点击悬浮窗的暂停按钮，任务会在当前步骤后暂停
-- **继续**：点击继续按钮恢复执行
-- **停止**：点击停止按钮取消任务
+**Control Tasks**:
+- **Pause**: Click the pause button on the floating window, task will pause after current step
+- **Resume**: Click resume button to continue execution
+- **Stop**: Click stop button to cancel task
 
-**查看历史**：
-1. 点击主界面的历史按钮
-2. 查看所有执行过的任务
-3. 点击任务查看详细步骤和截图
+**View History**:
+1. Click the history button on the main screen
+2. View all executed tasks
+3. Click a task to view detailed steps and screenshots
 
-### 任务示例
+### Task Examples
 
 ```
-# 社交通讯
-打开微信，搜索张三并发送消息：你好
+# Social Communication
+Open WeChat, search for John and send message: Hello
 
-# 购物搜索
-打开淘宝，搜索无线耳机，按销量排序
+# Shopping Search
+Open Taobao, search for wireless earphones, sort by sales
 
-# 外卖点餐
-打开美团，搜索附近的火锅店
+# Food Delivery
+Open Meituan, search for nearby hotpot restaurants
 
-# 出行导航
-打开高德地图，导航到最近的地铁站
+# Navigation
+Open Amap, navigate to the nearest subway station
 
-# 视频娱乐
-打开抖音，刷5个视频
+# Video Entertainment
+Open TikTok, browse 5 videos
 ```
 
-### 高级功能
+### Advanced Features
 
-**保存模型配置**：
-1. 进入设置 → 模型配置
-2. 配置好参数后点击"保存配置"
-3. 输入配置名称保存
-4. 之后可以快速切换不同配置
+**Save Model Configuration**:
+1. Go to Settings → Model Configuration
+2. After configuring parameters, click "Save Configuration"
+3. Enter configuration name to save
+4. You can quickly switch between different configurations later
 
-**创建任务模板**：
-1. 进入设置 → 任务模板
-2. 点击"添加模板"
-3. 输入模板名称和任务描述
-4. 在主界面点击模板按钮快速选择
+**Create Task Templates**:
+1. Go to Settings → Task Templates
+2. Click "Add Template"
+3. Enter template name and task description
+4. Click template button on main screen for quick selection
 
-**自定义系统提示词**：
-1. 进入设置 → 高级设置
-2. 编辑系统提示词
-3. 可以添加特定领域的指令增强
+**Custom System Prompts**:
+1. Go to Settings → Advanced Settings
+2. Edit system prompts
+3. Add domain-specific instructions for enhancement
 
-## 🛠️ 开发教程
+## 🛠️ Development Guide
 
-### 环境准备
+### Environment Setup
 
-**开发工具**：
-- Android Studio Hedgehog (2023.1.1) 或更高版本
-- JDK 11 或更高版本
+**Development Tools**:
+- Android Studio Hedgehog (2023.1.1) or higher
+- JDK 11 or higher
 - Kotlin 1.9.x
 
-**克隆项目**：
+**Clone Project**:
 ```bash
-git clone https://github.com/your-repo/AutoGLM-For-Android.git
-cd AutoGLM-For-Android
+git clone https://github.com/your-repo/AutoPhone.git
+cd AutoPhone
 ```
 
-**打开项目**：
-1. 启动 Android Studio
-2. 选择 "Open an existing project"
-3. 选择项目根目录
-4. 等待 Gradle 同步完成
+**Open Project**:
+1. Launch Android Studio
+2. Select "Open an existing project"
+3. Select project root directory
+4. Wait for Gradle sync to complete
 
-### 项目结构
+### Project Structure
 
 ```
 app/src/main/java/com/kevinluo/autoglm/
-├── action/                 # 动作处理模块
-│   ├── ActionHandler.kt    # 动作执行器
-│   ├── ActionParser.kt     # 动作解析器
-│   └── AgentAction.kt      # 动作数据类
-├── agent/                  # Agent 核心模块
-│   ├── PhoneAgent.kt       # 手机 Agent 主类
-│   └── AgentContext.kt     # 对话上下文管理
-├── app/                    # 应用基础模块
-│   ├── AppInfo.kt          # 应用信息数据类
-│   ├── AppResolver.kt      # 应用名称解析
-│   └── AutoGLMApplication.kt
-├── config/                 # 配置模块
-│   ├── I18n.kt             # 国际化
-│   └── SystemPrompts.kt    # 系统提示词
-├── device/                 # 设备操作模块
-│   └── DeviceExecutor.kt   # 设备命令执行
-├── history/                # 历史记录模块
-│   ├── HistoryManager.kt   # 历史管理
-│   ├── HistoryActivity.kt  # 历史界面
-│   ├── HistoryDetailActivity.kt  # 历史详情界面
-│   ├── HistoryDetailAdapter.kt   # 历史详情适配器
-│   ├── HistoryModels.kt    # 历史数据模型
-│   └── ScreenshotAnnotator.kt    # 截图标注工具
-├── input/                  # 输入模块
-│   ├── TextInputManager.kt # 文本输入管理
-│   ├── KeyboardHelper.kt   # 键盘辅助工具
-│   └── AutoGLMKeyboardService.kt  # 内置键盘
-├── model/                  # 模型通信模块
-│   └── ModelClient.kt      # API 客户端
-├── screenshot/             # 截图模块
-│   └── ScreenshotService.kt # 截图服务
-├── settings/               # 设置模块
-│   ├── SettingsManager.kt  # 设置管理
-│   └── SettingsActivity.kt # 设置界面
-├── ui/                     # UI 模块
-│   ├── FloatingWindowService.kt  # 悬浮窗服务
-│   ├── FloatingWindowTileService.kt  # 快捷磁贴服务
-│   ├── FloatingWindowToggleActivity.kt  # 悬浮窗切换
-│   └── MainViewModel.kt    # 主界面 ViewModel
-├── util/                   # 工具模块
-│   ├── CoordinateConverter.kt    # 坐标转换
-│   ├── ErrorHandler.kt     # 错误处理
-│   ├── HumanizedSwipeGenerator.kt # 人性化滑动
-│   ├── LogFileManager.kt   # 日志文件管理与导出
-│   └── Logger.kt           # 日志工具
-├── ComponentManager.kt     # 组件管理器
-├── MainActivity.kt         # 主界面
-└── UserService.kt          # Shizuku 用户服务
+├── action/                 # Action handling module
+├── agent/                  # Agent core module
+├── app/                    # App base module
+├── config/                 # Configuration module
+├── device/                 # Device operation module
+├── history/                # History module
+├── input/                  # Input module
+├── model/                  # Model communication module
+├── screenshot/             # Screenshot module
+├── settings/               # Settings module
+├── ui/                     # UI module
+├── util/                   # Utility module
+├── ComponentManager.kt     # Component manager
+├── MainActivity.kt         # Main activity
+└── UserService.kt          # Shizuku user service
 ```
 
-### 核心模块说明
+### Build and Debug
 
-**PhoneAgent (agent/PhoneAgent.kt)**
-- 核心 Agent 类，负责任务执行流程
-- 管理截图 → 模型请求 → 动作执行的循环
-- 支持暂停、继续、取消操作
-
-**ModelClient (model/ModelClient.kt)**
-- 与模型 API 通信
-- 支持 SSE 流式响应
-- 解析思考过程和动作指令
-
-**ActionHandler (action/ActionHandler.kt)**
-- 执行各种设备操作
-- 协调 DeviceExecutor、TextInputManager 等组件
-- 管理悬浮窗显示/隐藏
-
-**DeviceExecutor (device/DeviceExecutor.kt)**
-- 通过 Shizuku 执行 shell 命令
-- 实现点击、滑动、按键等操作
-- 支持人性化滑动轨迹
-
-**ScreenshotService (screenshot/ScreenshotService.kt)**
-- 截取屏幕并压缩为 WebP
-- 自动隐藏悬浮窗避免干扰
-- 支持敏感页面检测
-
-### 构建和调试
-
-**Debug 构建**：
+**Debug Build**:
 ```bash
 ./gradlew assembleDebug
 ```
 
-**Release 构建**：
+**Release Build**:
 ```bash
 ./gradlew assembleRelease
 ```
 
-**运行测试**：
+**Run Tests**:
 ```bash
 ./gradlew test
 ```
 
-**安装到设备**：
+**Install to Device**:
 ```bash
 ./gradlew installDebug
 ```
 
-## 🔧 常见问题
+## 🔧 FAQ
 
-| 问题 | 解决方案 |
-|------|----------|
-| **Shizuku 显示未运行？** | 确保 Shizuku 已安装并打开，按指引激活服务，推荐使用无线调试方式 |
-| **每次重启后 Shizuku 失效？** | 无线调试方式需重新配对，可考虑 Root 方式永久激活或设置开机自启脚本 |
-| **悬浮窗权限无法授予？** | 系统设置 → 应用 → AutoGLM → 权限 → 开启"显示在其他应用上层" |
-| **键盘无法启用？** | 系统设置 → 语言和输入法 → 管理键盘 → 启用 AutoGLM Keyboard |
-| **点击操作不生效？** | 检查 Shizuku 是否运行，部分系统需开启"USB 调试(安全设置)"，尝试重启 Shizuku |
-| **文本输入失败？** | 确保 AutoGLM Keyboard 已启用，检查输入框是否获得焦点 |
-| **截图显示黑屏？** | 敏感页面（支付、密码等）的正常保护，应用会自动检测并标记 |
+| Question | Solution |
+|----------|----------|
+| **Shizuku shows not running?** | Make sure Shizuku is installed and opened, follow the guide to activate, wireless debugging recommended |
+| **Shizuku invalid after restart?** | Wireless debugging requires re-pairing, consider Root method for permanent activation or set up auto-start script |
+| **Cannot grant overlay permission?** | System Settings → Apps → AutoPhone → Permissions → Enable "Display over other apps" |
+| **Cannot enable keyboard?** | System Settings → Language & Input → Manage Keyboards → Enable AutoPhone Keyboard |
+| **Click action not working?** | Check if Shizuku is running, some systems require "USB debugging (Security settings)", try restarting Shizuku |
+| **Text input failed?** | Make sure AutoPhone Keyboard is enabled, check if target input field has focus |
+| **Screenshot shows black screen?** | Normal protection for sensitive pages (payment, password, etc.), app will auto-detect and mark |
 
-## 📄 开源协议
+## 📄 License
 
-本项目基于 [MIT License](LICENSE) 开源。
+This project is licensed under [MIT License](LICENSE).
 
-## 🙏 致谢
+## 🙏 Acknowledgments
 
-- [Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM) - 原始开源项目
-- [Shizuku](https://github.com/RikkaApps/Shizuku) - 系统权限框架
-- [智谱 AI](https://www.zhipuai.cn/) - AutoGLM 模型提供方
+- [Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM) - Original open-source project
+- [Shizuku](https://github.com/RikkaApps/Shizuku) - System permission framework
+- [Zhipu AI](https://www.zhipuai.cn/) - AutoGLM model provider
 
-## 📞 联系方式
+## 📞 Contact
 
 - Issues: [GitHub Issues](https://github.com/your-repo/issues)
 - Email: luokavin@foxmail.com
@@ -354,6 +278,6 @@ app/src/main/java/com/kevinluo/autoglm/
 
 <div align="center">
 
-**如果这个项目对你有帮助，请给一个 ⭐ Star！**
+**If this project helps you, please give it a ⭐ Star!**
 
 </div>

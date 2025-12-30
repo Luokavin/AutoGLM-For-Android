@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
+import com.kevinluo.autoglm.BuildConfig
 import com.kevinluo.autoglm.util.Logger
 
 /**
@@ -16,18 +17,6 @@ import com.kevinluo.autoglm.util.Logger
 object KeyboardHelper {
 
     private const val TAG = "KeyboardHelper"
-    
-    /** AutoGLM package name. */
-    private const val PACKAGE_NAME = "com.kevinluo.autoglm"
-    
-    /** AutoGLM Keyboard IME ID (Android system format). */
-    const val IME_ID = "$PACKAGE_NAME/.input.AutoGLMKeyboardService"
-    
-    /**
-     * Checks if the given IME ID belongs to AutoGLM Keyboard.
-     */
-    fun isAutoGLMKeyboard(imeId: String): Boolean = 
-        imeId.startsWith("$PACKAGE_NAME/")
 
     /**
      * Keyboard status enumeration.
@@ -49,17 +38,24 @@ object KeyboardHelper {
         val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         val enabledInputMethods = imm.enabledInputMethodList
 
-        Logger.d(TAG, "Looking for keyboard: package=$PACKAGE_NAME")
+        // packageName uses applicationId (varies between debug/release)
+        // serviceName uses namespace (always com.kevinluo.autoglm)
+        val expectedPackage = BuildConfig.APPLICATION_ID
+        // Service name is based on namespace, not applicationId
+        val expectedServiceName = "com.kevinluo.autoglm.input.AutoGLMKeyboardService"
+        
+        Logger.d(TAG, "Looking for keyboard: package=$expectedPackage, service=$expectedServiceName")
 
         for (ime in enabledInputMethods) {
             Logger.d(TAG, "Found IME: package=${ime.packageName}, service=${ime.serviceName}")
-            if (ime.packageName == PACKAGE_NAME &&
-                ime.serviceName.endsWith(".AutoGLMKeyboardService")) {
+            if (ime.packageName == expectedPackage &&
+                ime.serviceName == expectedServiceName) {
                 Logger.d(TAG, "AutoGLM Keyboard is enabled")
                 return KeyboardStatus.ENABLED
             }
         }
 
+        // AutoGLM Keyboard is always installed (it's part of this app)
         Logger.d(TAG, "AutoGLM Keyboard is not enabled")
         return KeyboardStatus.NOT_ENABLED
     }

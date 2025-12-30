@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AutoGLM For Android</string>
+    <string name="app_name">AutoPhone</string>
     
     <!-- Shizuku Status -->
     <string name="shizuku_status_title">Shizuku 状态</string>
@@ -33,7 +33,7 @@
     <!-- Task Status -->
     <string name="task_status_label">状态</string>
     <string name="task_status_idle">空闲</string>
-    <string name="task_status_running">执行中</string>
+    <string name="task_status_running">正在思考中...</string>
     <string name="task_status_paused">已暂停</string>
     <string name="task_status_completed">已完成</string>
     <string name="task_status_failed">失败</string>
@@ -161,6 +161,7 @@
     <string name="floating_action_none">无</string>
     <string name="floating_minimize">最小化</string>
     <string name="floating_open_app">打开应用</string>
+    <string name="floating_close">关闭</string>
     <string name="floating_waiting_confirm">等待确认</string>
     <string name="floating_open">打开悬浮窗</string>
     <string name="floating_new_task">新任务</string>

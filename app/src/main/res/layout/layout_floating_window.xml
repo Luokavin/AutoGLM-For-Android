@@ -6,8 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:cardBackgroundColor="@color/floating_window_background"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="8dp"
+    app:cardCornerRadius="22dp"
+    app:cardElevation="10dp"
     app:strokeColor="@color/floating_window_border"
     app:strokeWidth="1dp">
 
@@ -17,79 +17,140 @@
         android:orientation="vertical">
 
         <!-- Header - Draggable -->
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/floating_window_header"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
             android:paddingHorizontal="12dp"
             android:paddingVertical="10dp">
 
-            <!-- Status indicator dot -->
+            <ImageView
+                android:id="@+id/copilot_avatar"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:adjustViewBounds="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_autoglm_logo"
+                app:tint="@color/icon_primary"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
             <View
                 android:id="@+id/status_indicator"
                 android:layout_width="8dp"
                 android:layout_height="8dp"
-                android:background="@drawable/status_indicator_background" />
+                android:layout_marginStart="6dp"
+                android:background="@drawable/status_indicator_background"
+                app:layout_constraintStart_toEndOf="@id/copilot_avatar"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
 
             <TextView
                 android:id="@+id/tv_status"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
                 android:text="@string/task_status_idle"
-                android:textColor="@color/text_primary"
-                android:textSize="13sp"
-                android:fontFamily="sans-serif-medium" />
+                android:textColor="@color/floating_window_text_primary"
+                android:textSize="14sp"
+                android:fontFamily="sans-serif-medium"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:maxWidth="120dp"
+                app:layout_constraintStart_toEndOf="@id/status_indicator"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
 
-            <!-- Step counter -->
             <TextView
                 android:id="@+id/tv_step_counter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
                 android:layout_marginEnd="8dp"
-                android:text="@string/step_counter_default"
-                android:textColor="@color/text_secondary"
-                android:textSize="11sp" />
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textColor="@color/floating_window_text_secondary"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
+                android:visibility="gone"
+                app:layout_constraintStart_toEndOf="@id/tv_action_preview"
+                app:layout_constraintEnd_toStartOf="@id/buttons_barrier"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
 
-            <!-- Open App button -->
-            <ImageButton
-                android:id="@+id/btn_open_app"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/floating_open_app"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_open_app"
-                android:tint="@color/icon_tertiary" />
-
-            <!-- Minimize button -->
-            <ImageButton
-                android:id="@+id/btn_minimize"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+            <TextView
+                android:id="@+id/tv_action_preview"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/floating_minimize"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_minus"
-                android:tint="@color/icon_tertiary" />
+                android:layout_marginEnd="8dp"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textColor="@color/floating_window_text_secondary"
+                android:textSize="12sp"
+                android:visibility="gone"
+                app:layout_constraintStart_toEndOf="@id/tv_status"
+                app:layout_constraintEnd_toStartOf="@id/tv_step_counter"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
 
-            <!-- Close button -->
-            <ImageButton
-                android:id="@+id/btn_close"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_marginStart="4dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/dialog_cancel"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_close"
-                android:tint="@color/icon_tertiary" />
-        </LinearLayout>
+            <androidx.constraintlayout.widget.Barrier
+                android:id="@+id/buttons_barrier"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:barrierDirection="start"
+                app:constraint_referenced_ids="buttons_container" />
+
+            <LinearLayout
+                android:id="@+id/buttons_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <ImageButton
+                    android:id="@+id/btn_open_app"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:padding="6dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/floating_open_app"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_open_app"
+                    app:tint="@color/icon_tertiary" />
+
+                <ImageButton
+                    android:id="@+id/btn_minimize"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="4dp"
+                    android:padding="6dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/floating_minimize"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_minus"
+                    app:tint="@color/icon_tertiary" />
+                    
+                 <ImageButton
+                    android:id="@+id/btn_close"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="4dp"
+                    android:padding="6dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/floating_close"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/icon_tertiary" />
+
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <!-- Task Input Area (shown when idle) -->
         <LinearLayout
@@ -112,14 +173,15 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/task_section_label"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/floating_window_text_secondary"
                     android:textSize="12sp" />
 
                 <ImageButton
                     android:id="@+id/btn_select_template"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="6dp"
                     android:contentDescription="@string/task_select_template"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_list"
@@ -136,23 +198,26 @@
                 android:gravity="top|start"
                 android:hint="@string/task_input_hint"
                 android:inputType="textMultiLine"
-                android:padding="10dp"
-                android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_hint"
-                android:textSize="13sp" />
+                android:padding="12dp"
+                android:textColor="@color/floating_window_text_primary"
+                android:textColorHint="@color/floating_window_text_secondary"
+                android:textSize="14sp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_start"
+                style="@style/Widget.App.Button.Primary"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_marginTop="10dp"
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:paddingHorizontal="16dp"
                 android:text="@string/start_task"
-                android:textSize="13sp"
-                app:backgroundTint="@color/primary"
-                app:cornerRadius="8dp"
+                android:textSize="14sp"
+                android:textStyle="bold"
                 app:icon="@drawable/ic_play"
                 app:iconGravity="textStart"
-                app:iconSize="18dp" />
+                app:iconPadding="8dp"
+                app:iconSize="18dp"
+                app:iconTint="@color/button_primary_text" />
 
         </LinearLayout>
 
@@ -172,11 +237,10 @@
             android:id="@+id/tv_result"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/surface_variant"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="8dp"
-            android:textColor="@color/text_primary"
-            android:textSize="12sp"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp"
+            android:textColor="@color/floating_window_text_primary"
+            android:textSize="13sp"
             android:visibility="gone" />
 
         <!-- Control buttons container (shown when running/paused) -->
@@ -200,65 +264,74 @@
                 <!-- Pause button (shown when running) -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_pause"
+                    style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_width="match_parent"
-                    android:layout_height="36dp"
+                    android:layout_height="40dp"
                     android:text="@string/pause_task"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
+                    android:textColor="@color/button_tonal_text"
                     android:visibility="visible"
-                    app:backgroundTint="@color/status_waiting"
-                    app:cornerRadius="8dp"
+                    app:backgroundTint="@color/button_tonal_bg"
                     app:icon="@drawable/ic_pause"
                     app:iconGravity="textStart"
-                    app:iconSize="16dp" />
+                    app:iconSize="18dp"
+                    app:iconTint="@color/button_tonal_text" />
 
                 <!-- Resume button (shown when paused) -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_resume"
+                    style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_width="match_parent"
-                    android:layout_height="36dp"
+                    android:layout_height="40dp"
                     android:text="@string/resume_task"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
+                    android:textColor="@color/button_tonal_text"
                     android:visibility="gone"
-                    app:backgroundTint="@color/status_running"
-                    app:cornerRadius="8dp"
+                    app:backgroundTint="@color/button_tonal_bg"
                     app:icon="@drawable/ic_play"
                     app:iconGravity="textStart"
-                    app:iconSize="16dp" />
+                    app:iconSize="18dp"
+                    app:iconTint="@color/button_tonal_text" />
 
             </FrameLayout>
 
             <!-- Stop button - always in same position -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_stop"
+                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="0dp"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="8dp"
                 android:text="@string/cancel_task"
-                android:textSize="12sp"
+                android:textSize="13sp"
+                android:textColor="@color/button_tonal_red_text"
                 android:visibility="visible"
-                app:backgroundTint="@color/status_error"
-                app:cornerRadius="8dp"
+                app:backgroundTint="@color/button_tonal_red_bg"
                 app:icon="@drawable/ic_stop"
                 app:iconGravity="textStart"
-                app:iconSize="16dp" />
+                app:iconSize="18dp"
+                app:iconTint="@color/button_tonal_red_text" />
 
         </LinearLayout>
 
         <!-- New Task button (shown when completed/failed) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_new_task"
+            style="@style/Widget.App.Button.Primary"
             android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:layout_margin="8dp"
+            android:layout_height="48dp"
+            android:layout_margin="12dp"
+            android:paddingHorizontal="16dp"
             android:text="@string/floating_new_task"
-            android:textSize="12sp"
+            android:textSize="14sp"
+            android:textStyle="bold"
             android:visibility="gone"
-            app:backgroundTint="@color/primary"
-            app:cornerRadius="8dp"
             app:icon="@drawable/ic_plus"
             app:iconGravity="textStart"
-            app:iconSize="16dp" />
+            app:iconPadding="8dp"
+            app:iconSize="18dp"
+            app:iconTint="@color/button_primary_text" />
 
     </LinearLayout>
 

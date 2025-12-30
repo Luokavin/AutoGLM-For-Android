@@ -22,10 +22,10 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            style="@style/TextAppearance.App.CardTitle"
             android:text="@string/app_name"
-            android:textColor="@color/text_primary"
             android:textSize="20sp"
-            android:fontFamily="sans-serif-medium" />
+            android:textStyle="bold" />
 
         <ImageButton
             android:id="@+id/floatingWindowBtn"
@@ -100,18 +100,16 @@
                                 android:id="@+id/statusTitle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/shizuku_status_title"
-                                android:textColor="@color/text_primary"
-                                android:textSize="16sp" />
+                                style="@style/TextAppearance.App.CardTitle"
+                                android:text="@string/shizuku_status_title" />
 
                             <TextView
                                 android:id="@+id/statusText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                style="@style/TextAppearance.App.ListSubtitle"
                                 android:layout_marginTop="2dp"
-                                android:text="@string/shizuku_status_unknown"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp" />
+                                android:text="@string/shizuku_status_unknown" />
 
                         </LinearLayout>
 
@@ -204,18 +202,16 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/overlay_permission_title"
-                                android:textColor="@color/text_primary"
-                                android:textSize="16sp" />
+                                style="@style/TextAppearance.App.CardTitle"
+                                android:text="@string/overlay_permission_title" />
 
                             <TextView
                                 android:id="@+id/overlayStatusText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                style="@style/TextAppearance.App.ListSubtitle"
                                 android:layout_marginTop="2dp"
-                                android:text="@string/overlay_permission_denied"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp" />
+                                android:text="@string/overlay_permission_denied" />
 
                         </LinearLayout>
 
@@ -278,18 +274,16 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/keyboard_title"
-                                android:textColor="@color/text_primary"
-                                android:textSize="16sp" />
+                                style="@style/TextAppearance.App.CardTitle"
+                                android:text="@string/keyboard_title" />
 
                             <TextView
                                 android:id="@+id/keyboardStatusText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                style="@style/TextAppearance.App.ListSubtitle"
                                 android:layout_marginTop="2dp"
-                                android:text="@string/keyboard_not_enabled"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp" />
+                                android:text="@string/keyboard_not_enabled" />
 
                         </LinearLayout>
 
@@ -343,9 +337,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
-                        android:text="@string/quick_action_history"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp" />
+                        style="@style/TextAppearance.App.ListTitle"
+                        android:text="@string/quick_action_history" />
 
                     <ImageView
                         android:layout_width="24dp"
@@ -391,9 +384,8 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="16dp"
                             android:layout_weight="1"
-                            android:text="@string/task_section_label"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp" />
+                            style="@style/TextAppearance.App.CardTitle"
+                            android:text="@string/task_section_label" />
 
                         <ImageButton
                             android:id="@+id/btnSelectTemplate"
@@ -489,18 +481,16 @@
                                 android:id="@+id/taskStatusText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/task_status_idle"
-                                android:textColor="@color/text_primary"
-                                android:textSize="16sp" />
+                                style="@style/TextAppearance.App.CardTitle"
+                                android:text="@string/task_status_idle" />
 
                             <TextView
                                 android:id="@+id/stepCounterText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                style="@style/TextAppearance.App.ListSubtitle"
                                 android:layout_marginTop="2dp"
-                                android:text="@string/step_counter_default"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp" />
+                                android:text="@string/step_counter_default" />
 
                         </LinearLayout>
 

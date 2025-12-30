@@ -10,27 +10,56 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:background="@color/keyboard_background"
-    android:padding="12dp"
-    android:gravity="center_vertical">
+    android:padding="8dp">
 
-    <!-- Status indicator -->
-    <View
-        android:id="@+id/keyboard_status_indicator"
-        android:layout_width="8dp"
-        android:layout_height="8dp"
-        android:background="@drawable/keyboard_status_indicator" />
-
-    <!-- Keyboard name -->
-    <TextView
-        android:id="@+id/keyboard_title"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:text="@string/keyboard_name"
-        android:textColor="@color/keyboard_text"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="4dp">
+
+        <!-- Status indicator -->
+        <View
+            android:id="@+id/keyboard_status_indicator"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/keyboard_status_indicator" />
+
+        <!-- Keyboard name -->
+        <TextView
+            android:id="@+id/keyboard_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="@string/keyboard_name"
+            android:textColor="@color/keyboard_text"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <!-- Status text -->
+        <TextView
+            android:id="@+id/keyboard_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/keyboard_status_ready"
+            android:textColor="@color/keyboard_status_text"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <!-- Hint text -->
+    <TextView
+        android:id="@+id/keyboard_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/keyboard_hint"
+        android:textColor="@color/keyboard_hint_text"
+        android:textSize="11sp"
+        android:gravity="center" />
 
 </LinearLayout>

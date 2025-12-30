@@ -4,41 +4,41 @@
     <color name="white">#FFFFFFFF</color>
     
     <!-- Primary Colors - Soft Blue -->
-    <color name="primary">#FF7BA4DB</color>
-    <color name="primary_dark">#FF5A8ACF</color>
-    <color name="primary_light">#FF9DBDE8</color>
+    <color name="primary">#FF5B8DEF</color>
+    <color name="primary_dark">#FF4A7BC8</color>
+    <color name="primary_light">#FF8AB4F8</color>
     <color name="primary_variant">#FF4A7BC8</color>
-    <color name="on_primary">#FF1A1A1A</color>
+    <color name="on_primary">#FFFFFFFF</color>
     
     <!-- Secondary Colors -->
-    <color name="secondary">#FF7BA4DB</color>
+    <color name="secondary">#FF5B8DEF</color>
     <color name="secondary_variant">#FF5A8ACF</color>
     <color name="on_secondary">#FF1A1A1A</color>
     
-    <!-- Dark Surface Colors -->
-    <color name="background">#FF121212</color>
-    <color name="surface">#FF1E1E1E</color>
-    <color name="surface_variant">#FF2A2A2A</color>
-    <color name="surface_elevated">#FF252525</color>
-    <color name="on_background">#FFFFFFFF</color>
-    <color name="on_surface">#FFFFFFFF</color>
-    <color name="on_surface_variant">#FFB0B0B0</color>
+    <!-- Surface Colors - Light, Doubao-style -->
+    <color name="background">#FFF6F7FB</color>
+    <color name="surface">#FFFFFFFF</color>
+    <color name="surface_variant">#FFF2F4F8</color>
+    <color name="surface_elevated">#FFFFFFFF</color>
+    <color name="on_background">#FF111827</color>
+    <color name="on_surface">#FF111827</color>
+    <color name="on_surface_variant">#FF6B7280</color>
     
     <!-- Card and Container Colors -->
-    <color name="card_background">#FF1E1E1E</color>
-    <color name="card_stroke">#FF333333</color>
-    <color name="divider">#FF2A2A2A</color>
+    <color name="card_background">#FFFFFFFF</color>
+    <color name="card_stroke">#FFE6EAF2</color>
+    <color name="divider">#FFE6EAF2</color>
     
     <!-- Floating Window Colors -->
-    <color name="floating_window_background">#F51E1E1E</color>
-    <color name="floating_window_border">#FF333333</color>
-    <color name="floating_window_header">#FF252525</color>
-    <color name="floating_window_text_primary">#FFFFFFFF</color>
-    <color name="floating_window_text_secondary">#FFB0B0B0</color>
+    <color name="floating_window_background">#FFFFFFFF</color>
+    <color name="floating_window_border">#FFE6EAF2</color>
+    <color name="floating_window_header">#FFFFFFFF</color>
+    <color name="floating_window_text_primary">#FF222222</color>
+    <color name="floating_window_text_secondary">#FF555555</color>
     
     <!-- Status Colors -->
     <color name="status_idle">#FF666666</color>
-    <color name="status_running">#FF7BA4DB</color>
+    <color name="status_running">#FF5B8DEF</color>
     <color name="status_paused">#FFFFB74D</color>
     <color name="status_completed">#FF81C784</color>
     <color name="status_failed">#FFEF5350</color>
@@ -47,43 +47,48 @@
     <color name="status_error">#FFEF5350</color>
     
     <!-- Dialog Colors -->
-    <color name="dialog_background">#FF1E1E1E</color>
-    <color name="dialog_surface">#FF252525</color>
+    <color name="dialog_background">#CC000000</color>
+    <color name="dialog_surface">#FFFFFFFF</color>
     <color name="dialog_button_confirm">#FF7BA4DB</color>
     <color name="dialog_button_cancel">#FF888888</color>
     
     <!-- Log Background -->
-    <color name="log_background">#FF151515</color>
-    <color name="log_background_dark">#FF0A0A0A</color>
+    <color name="log_background">#FF0F172A</color>
+    <color name="log_background_dark">#FF020617</color>
     
     <!-- Input Field Colors -->
-    <color name="input_background">#FF252525</color>
-    <color name="input_stroke">#FF404040</color>
+    <color name="input_background">#FFFFFFFF</color>
+    <color name="input_stroke">#FFD1D5DB</color>
     <color name="input_stroke_focused">#FF7BA4DB</color>
     
     <!-- Button Colors -->
-    <color name="button_primary">#FF7BA4DB</color>
-    <color name="button_primary_text">#FF1A1A1A</color>
+    <color name="button_primary">#FF5B8DEF</color>
+    <color name="button_primary_text">#FFFFFFFF</color>
+    <color name="button_primary_pressed">#FF4A7BC8</color>
+    <color name="button_tonal_bg">#FFEFF4FF</color>
+    <color name="button_tonal_text">#FF1D4ED8</color>
+    <color name="button_tonal_red_bg">#FFFEE2E2</color>
+    <color name="button_tonal_red_text">#FFDC2626</color>
     <color name="button_secondary">#FF2A2A2A</color>
     <color name="button_secondary_text">#FF7BA4DB</color>
     <color name="button_outlined_stroke">#FF7BA4DB</color>
     
     <!-- Text Colors -->
-    <color name="text_primary">#FFFFFFFF</color>
-    <color name="text_secondary">#FFB0B0B0</color>
-    <color name="text_hint">#FF707070</color>
+    <color name="text_primary">#FF111827</color>
+    <color name="text_secondary">#FF6B7280</color>
+    <color name="text_hint">#FF9CA3AF</color>
     
     <!-- Icon Colors -->
-    <color name="icon_primary">#FF7BA4DB</color>
-    <color name="icon_secondary">#FF888888</color>
-    <color name="icon_tertiary">#FFAAAAAA</color>
+    <color name="icon_primary">#FF5B8DEF</color>
+    <color name="icon_secondary">#FF94A3B8</color>
+    <color name="icon_tertiary">#FF64748B</color>
     
     <!-- Error Color -->
     <color name="error">#FFEF5350</color>
     
     <!-- Ripple and Overlay -->
-    <color name="ripple_color">#1A7BA4DB</color>
-    <color name="overlay_light">#0A7BA4DB</color>
+    <color name="ripple_color">#1A5B8DEF</color>
+    <color name="overlay_light">#0A5B8DEF</color>
     
     <!-- Keyboard Colors -->
     <color name="keyboard_background">#FF1A1A1A</color>

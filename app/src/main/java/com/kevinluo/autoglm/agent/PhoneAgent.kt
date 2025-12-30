@@ -458,10 +458,17 @@ class PhoneAgent(
                 )
             }
             
-            // Wait before capturing screenshot (configurable delay)
-            if (config.screenshotDelayMs > 0) {
-                Logger.d(TAG, "Waiting ${config.screenshotDelayMs}ms before screenshot...")
-                kotlinx.coroutines.delay(config.screenshotDelayMs)
+            // 截图前等待（可配置的延迟）
+            // 如果是第一步，且用户没有特别设置超长延迟，我们可以缩短等待时间以提升响应速度
+            val currentDelay = if (currentStepNumber == 1 && config.screenshotDelayMs > 500) {
+                500L // 第一步只等待 500ms
+            } else {
+                config.screenshotDelayMs
+            }
+            
+            if (currentDelay > 0) {
+                Logger.d(TAG, "截图前等待 ${currentDelay}ms...")
+                kotlinx.coroutines.delay(currentDelay)
             }
             
             // Check cancellation after delay

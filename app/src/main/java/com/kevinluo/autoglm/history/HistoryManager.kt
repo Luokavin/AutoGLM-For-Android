@@ -346,7 +346,13 @@ class HistoryManager private constructor(private val context: Context) {
         val file = File(taskDir, "step_${stepNumber}${suffix}.webp")
         
         FileOutputStream(file).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 85, out)
+            val format = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                Bitmap.CompressFormat.WEBP_LOSSY
+            } else {
+                @Suppress("DEPRECATION")
+                Bitmap.CompressFormat.WEBP
+            }
+            bitmap.compress(format, 85, out)
         }
         
         return file.absolutePath

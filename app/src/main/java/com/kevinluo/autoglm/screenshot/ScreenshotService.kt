@@ -84,8 +84,9 @@ class ScreenshotService(
     
     companion object {
         private const val TAG = "ScreenshotService"
-        private const val HIDE_DELAY_MS = 200L
-        private const val SHOW_DELAY_MS = 100L
+        private const val HIDE_DELAY_MS = 16L
+        private const val SHOW_DELAY_MS = 0L
+        private const val HIDE_WAIT_TIMEOUT_MS = 300L
         private const val FALLBACK_WIDTH = 1080
         private const val FALLBACK_HEIGHT = 1920
         
@@ -102,117 +103,129 @@ class ScreenshotService(
     }
     
     /**
-     * Captures the current screen content.
+     * 捕获当前屏幕内容。
      *
-     * Uses try-finally pattern to ensure floating window is always restored,
-     * even if an exception occurs during capture. The screenshot is scaled
-     * and compressed to WebP format for optimal size.
+     * 该方法协调悬浮窗的隐藏/显示以及截图的获取和处理。
+     * 为了减少悬浮窗消失的时间，我们在获取原始截图数据后立即恢复悬浮窗，
+     * 然后再进行耗时的图片处理（解码、缩放、压缩）。
      *
-     * @return Screenshot object containing the captured image data and metadata
-     *
+     * @return 包含截图数据和元数据的 Screenshot 对象
      */
     suspend fun capture(): Screenshot = withContext(Dispatchers.IO) {
         val floatingWindowController = floatingWindowControllerProvider()
-        val hasFloatingWindow = floatingWindowController != null
-        Logger.d(TAG, "Starting screenshot capture, window visible: ${floatingWindowController?.isVisible()}")
-        
-        // Hide floating window before capture
-        if (hasFloatingWindow) {
-            Logger.d(TAG, "Hiding floating window")
-            withContext(Dispatchers.Main) {
-                floatingWindowController?.hide()
-            }
-            delay(HIDE_DELAY_MS)
-        }
-        
+        val shouldHideFloatingWindow = floatingWindowController?.isVisible() == true
+        Logger.d(TAG, "开始截图, 是否隐藏悬浮窗=$shouldHideFloatingWindow")
+
+        var rawPngData: ByteArray? = null
+
+        // 1. 隐藏悬浮窗并捕获原始数据
         try {
-            // Capture screenshot
-            val result = captureScreen()
-            Logger.logScreenshot(result.width, result.height, result.isSensitive)
-            result
+            if (shouldHideFloatingWindow) {
+                withContext(Dispatchers.Main) {
+                    floatingWindowController?.hide()
+                }
+
+                // 极致优化：不等待悬浮窗完全消失的检查和延迟
+                // 利用 ADB 命令启动和执行的天然耗时（通常几十毫秒）作为“隐式等待”
+                // 这样可以让悬浮窗消失动画与 ADB 进程启动并行，最大程度重叠时间
+                // 仅保留极短的延时以防万一
+                // delay(5) 
+            }
+
+            // 执行截图命令获取原始数据
+            rawPngData = executeScreencapToBytes()
+
         } catch (e: Exception) {
-            val handledError = ErrorHandler.handleScreenshotError(e.message ?: "Unknown error", false, e)
-            Logger.e(TAG, ErrorHandler.formatErrorForLog(handledError), e)
-            createFallbackScreenshot()
+            Logger.e(TAG, "截图命令执行失败", e)
         } finally {
-            // Always restore floating window after capture (success or failure)
-            if (hasFloatingWindow) {
+            // 2. 立即恢复悬浮窗（在处理图片之前）
+            if (shouldHideFloatingWindow) {
                 delay(SHOW_DELAY_MS)
-                Logger.d(TAG, "Restoring floating window")
                 withContext(Dispatchers.Main) {
                     floatingWindowController?.showAndBringToFront()
                 }
             }
         }
+
+        // 3. 处理截图数据（耗时操作，此时悬浮窗已显示）
+        try {
+            if (rawPngData == null || rawPngData.isEmpty()) {
+                Logger.w(TAG, "未能获取截图数据，返回兜底图")
+                return@withContext createFallbackScreenshot()
+            }
+
+            return@withContext processRawScreenshot(rawPngData)
+
+        } catch (e: Exception) {
+            val handledError = ErrorHandler.handleScreenshotError(e.message ?: "Unknown error", false, e)
+            Logger.e(TAG, ErrorHandler.formatErrorForLog(handledError), e)
+            return@withContext createFallbackScreenshot()
+        }
     }
     
     /**
-     * Captures the screen using Shizuku shell command.
+     * 处理原始截图数据。
      *
-     * Executes screencap command, scales down the image if needed,
-     * and converts to WebP format for smaller file size.
+     * 将 PNG 数据解码，根据需要缩放，并转换为 WebP 格式。
      *
-     * @return Screenshot object with captured image data, or fallback screenshot on failure
-     *
+     * @param pngData 原始 PNG 字节数组
+     * @return 处理后的 Screenshot 对象
      */
-    private suspend fun captureScreen(): Screenshot = withContext(Dispatchers.IO) {
-        try {
-            Logger.d(TAG, "Executing screencap command")
-            
-            val pngData = executeScreencapToBytes()
-            
-            if (pngData == null || pngData.isEmpty()) {
-                Logger.w(TAG, "Failed to capture screenshot, returning fallback")
-                return@withContext createFallbackScreenshot()
-            }
-            
-            Logger.d(TAG, "PNG data captured: ${pngData.size} bytes")
-            
-            // Decode PNG to bitmap
-            var bitmap = BitmapFactory.decodeByteArray(pngData, 0, pngData.size)
-            if (bitmap == null) {
-                Logger.w(TAG, "Failed to decode PNG, returning fallback")
-                return@withContext createFallbackScreenshot()
-            }
-            
-            val originalWidth = bitmap.width
-            val originalHeight = bitmap.height
-            
-            // Calculate scaled dimensions based on max size constraints
-            val (scaledWidth, scaledHeight) = calculateOptimalDimensions(originalWidth, originalHeight)
-            
-            // Scale bitmap if needed
-            if (scaledWidth != originalWidth || scaledHeight != originalHeight) {
-                val scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
-                bitmap.recycle()
-                bitmap = scaledBitmap
-                Logger.d(TAG, "Scaled from ${originalWidth}x${originalHeight} to ${scaledWidth}x${scaledHeight}")
-            }
-            
-            // Convert to WebP for better compression
-            val webpStream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, WEBP_QUALITY, webpStream)
-            bitmap.recycle()
-            
-            val webpData = webpStream.toByteArray()
-            val compressionRatio = if (pngData.isNotEmpty()) 100 * webpData.size / pngData.size else 0
-            Logger.d(TAG, "Converted to WebP: ${webpData.size} bytes ($compressionRatio% of PNG)")
-            
-            val base64Data = encodeToBase64(webpData)
-            Logger.d(TAG, "Screenshot captured: ${scaledWidth}x${scaledHeight}, base64 length: ${base64Data.length}")
-            
-            Screenshot(
-                base64Data = base64Data,
-                width = scaledWidth,
-                height = scaledHeight,
-                originalWidth = originalWidth,
-                originalHeight = originalHeight,
-                isSensitive = false
-            )
-        } catch (e: Exception) {
-            Logger.e(TAG, "Screenshot capture failed", e)
-            createFallbackScreenshot()
+    private suspend fun processRawScreenshot(pngData: ByteArray): Screenshot = withContext(Dispatchers.Default) {
+        Logger.d(TAG, "开始处理截图数据: ${pngData.size} bytes")
+        
+        var bitmap = BitmapFactory.decodeByteArray(pngData, 0, pngData.size)
+        if (bitmap == null) {
+            Logger.w(TAG, "PNG 解码失败")
+            return@withContext createFallbackScreenshot()
         }
+        
+        val originalWidth = bitmap.width
+        val originalHeight = bitmap.height
+        
+        val (scaledWidth, scaledHeight) = calculateOptimalDimensions(originalWidth, originalHeight)
+        
+        if (scaledWidth != originalWidth || scaledHeight != originalHeight) {
+            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
+            bitmap.recycle()
+            bitmap = scaledBitmap
+            Logger.d(TAG, "图片已缩放: ${originalWidth}x${originalHeight} -> ${scaledWidth}x${scaledHeight}")
+        }
+        
+        val webpStream = ByteArrayOutputStream()
+        val format = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            Bitmap.CompressFormat.WEBP_LOSSY
+        } else {
+            @Suppress("DEPRECATION")
+            Bitmap.CompressFormat.WEBP
+        }
+        
+        // 压缩图片
+        bitmap.compress(format, WEBP_QUALITY, webpStream)
+        bitmap.recycle()
+        
+        val webpData = webpStream.toByteArray()
+        val compressionRatio = if (pngData.isNotEmpty()) 100 * webpData.size / pngData.size else 0
+        Logger.d(TAG, "转换为 WebP: ${webpData.size} bytes (原图的 $compressionRatio%)")
+        
+        val base64Data = encodeToBase64(webpData)
+        Logger.d(TAG, "截图处理完成: ${scaledWidth}x${scaledHeight}, base64 长度: ${base64Data.length}")
+        
+        Screenshot(
+            base64Data = base64Data,
+            width = scaledWidth,
+            height = scaledHeight,
+            originalWidth = originalWidth,
+            originalHeight = originalHeight,
+            isSensitive = false
+        )
+    }
+
+    /**
+     * (Deprecated) Old single-function implementation, kept for reference but not used.
+     */
+    private suspend fun captureScreen(): Screenshot {
+        return createFallbackScreenshot()
     }
     
     /**
@@ -370,7 +383,7 @@ class ScreenshotService(
         val bitmap = Bitmap.createBitmap(FALLBACK_WIDTH, FALLBACK_HEIGHT, Bitmap.Config.ARGB_8888)
         
         val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, WEBP_QUALITY, outputStream)
+        bitmap.compress(preferredWebpCompressFormat(), WEBP_QUALITY, outputStream)
         bitmap.recycle()
         
         val base64Data = Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
@@ -432,12 +445,21 @@ class ScreenshotService(
      */
     fun encodeBitmapToBase64(
         bitmap: Bitmap,
-        format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSY,
+        format: Bitmap.CompressFormat = preferredWebpCompressFormat(),
         quality: Int = WEBP_QUALITY
     ): String {
         val outputStream = ByteArrayOutputStream()
         bitmap.compress(format, quality, outputStream)
         return encodeToBase64(outputStream.toByteArray())
+    }
+
+    private fun preferredWebpCompressFormat(): Bitmap.CompressFormat {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            Bitmap.CompressFormat.WEBP_LOSSY
+        } else {
+            @Suppress("DEPRECATION")
+            Bitmap.CompressFormat.WEBP
+        }
     }
     
     /**

@@ -1,6 +1,7 @@
 package com.kevinluo.autoglm.settings
 
 import android.content.Intent
+import android.content.ActivityNotFoundException
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -956,7 +957,12 @@ class SettingsActivity : AppCompatActivity() {
         
         val shareIntent = LogFileManager.exportLogs(this)
         if (shareIntent != null) {
-            startActivity(Intent.createChooser(shareIntent, getString(R.string.settings_export_logs)))
+            try {
+                startActivity(Intent.createChooser(shareIntent, getString(R.string.settings_export_logs)))
+            } catch (e: ActivityNotFoundException) {
+                Logger.e(TAG, "No activity found to handle log export", e)
+                Toast.makeText(this, R.string.settings_logs_export_failed, Toast.LENGTH_SHORT).show()
+            }
         } else {
             Toast.makeText(this, R.string.settings_logs_export_failed, Toast.LENGTH_SHORT).show()
         }
