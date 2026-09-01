@@ -202,8 +202,8 @@ class TaskFragment : Fragment() {
      * Updates UI based on the current state.
      */
     private fun updateUiState(state: MainUiState) {
-        // Update start button state
-        btnStartTask.isEnabled = state.canStartTask
+        // Update start button state - enabled whenever a task is not currently running
+        btnStartTask.isEnabled = !state.isTaskRunning
     }
 
     /**
@@ -221,11 +221,21 @@ class TaskFragment : Fragment() {
 
         // Check Shizuku connection
         if (state.shizukuStatus != ShizukuStatus.CONNECTED) {
-            Toast.makeText(
-                requireContext(),
-                R.string.toast_shizuku_not_running,
-                Toast.LENGTH_SHORT,
-            ).show()
+            if (rikka.shizuku.Shizuku.pingBinder() &&
+                rikka.shizuku.Shizuku.checkSelfPermission() != android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                try {
+                    rikka.shizuku.Shizuku.requestPermission(1001)
+                } catch (e: Exception) {
+                    Logger.e(TAG, "Failed to request Shizuku permission", e)
+                }
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    R.string.toast_shizuku_not_running,
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
             return
         }
 

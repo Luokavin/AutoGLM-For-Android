@@ -901,6 +901,10 @@ class FloatingWindowService :
 
         startBtn?.setOnClickListener {
             val task = taskInput?.text?.toString()?.trim() ?: ""
+            if (task.isBlank()) {
+                Toast.makeText(this, R.string.toast_task_empty, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             if (task.isNotBlank()) {
                 // Check if we can start a task and get specific reason if not
                 val blockReason = TaskExecutionManager.getStartTaskBlockReason()
