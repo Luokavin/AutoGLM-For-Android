@@ -1,25 +1,15 @@
 package com.kevinluo.autoglm.util
 
+import com.kevinluo.autoglm.config.I18n
 import com.kevinluo.autoglm.model.NetworkError
 
 /**
  * Centralized error handling utility for the AutoGLM Phone Agent application.
  *
- * Provides consistent error categorization, logging, and user-friendly messages.
+ * Provides consistent error categorization, logging, and user-friendly messages
+ * with multi-language support (Chinese and English).
  * All error handling should go through this utility to ensure consistent
  * error formatting and logging across the application.
- *
- * Usage example:
- * ```kotlin
- * try {
- *     performOperation()
- * } catch (e: Exception) {
- *     val error = ErrorHandler.handleUnknownError("Operation failed", e)
- *     Logger.e(TAG, ErrorHandler.formatErrorForLog(error), e)
- *     return Result.Error(error.userMessage, e)
- * }
- * ```
- *
  */
 object ErrorHandler {
     /**
@@ -71,17 +61,17 @@ object ErrorHandler {
      * Handles a network error and returns a user-friendly error.
      *
      * @param error The network error to handle
+     * @param language Language code: "cn" for Chinese, "en" for English
      * @return HandledError with appropriate user and technical messages
-     *
      */
-    fun handleNetworkError(error: NetworkError): HandledError {
+    fun handleNetworkError(error: NetworkError, language: String = "cn"): HandledError {
         Logger.logNetworkError(error.message ?: "Unknown network error")
 
         return when (error) {
             is NetworkError.ConnectionFailed -> {
                 HandledError(
                     category = ErrorCategory.NETWORK,
-                    userMessage = "无法连接到服务器，请检查网络连接",
+                    userMessage = I18n.getMessage("connect_failed", language),
                     technicalMessage = error.message,
                     isRetryable = true,
                     originalException = error,
@@ -91,7 +81,7 @@ object ErrorHandler {
             is NetworkError.Timeout -> {
                 HandledError(
                     category = ErrorCategory.NETWORK,
-                    userMessage = "请求超时，请稍后重试",
+                    userMessage = I18n.getMessage("request_timeout", language),
                     technicalMessage = "Request timed out after ${error.timeoutMs}ms",
                     isRetryable = true,
                     originalException = error,
@@ -99,9 +89,16 @@ object ErrorHandler {
             }
 
             is NetworkError.ServerError -> {
+                val userMsg = when (error.statusCode) {
+                    401 -> I18n.getMessage("auth_failed_401", language)
+                    403 -> I18n.getMessage("forbidden_403", language)
+                    404 -> I18n.getMessage("not_found_404", language)
+                    429 -> I18n.getMessage("rate_limit_429", language)
+                    else -> I18n.getFormattedMessage("server_error_format", language, error.statusCode)
+                }
                 HandledError(
                     category = ErrorCategory.NETWORK,
-                    userMessage = "服务器错误 (${error.statusCode})，请稍后重试",
+                    userMessage = userMsg,
                     technicalMessage = "Server error ${error.statusCode}: ${error.message}",
                     isRetryable = error.statusCode >= 500,
                     originalException = error,
@@ -111,7 +108,7 @@ object ErrorHandler {
             is NetworkError.ParseError -> {
                 HandledError(
                     category = ErrorCategory.PARSING,
-                    userMessage = "无法解析服务器响应",
+                    userMessage = I18n.getMessage("parse_response_failed", language),
                     technicalMessage = "Parse error: ${error.rawResponse.take(MAX_RAW_RESPONSE_LENGTH)}",
                     isRetryable = false,
                     originalException = error,
@@ -126,15 +123,20 @@ object ErrorHandler {
      * @param actionType Type of action that failed (e.g., "tap", "swipe", "type")
      * @param error Error message describing what went wrong
      * @param exception Optional exception that caused the error
+     * @param language Language code: "cn" for Chinese, "en" for English
      * @return HandledError with appropriate user and technical messages
-     *
      */
-    fun handleActionError(actionType: String, error: String, exception: Throwable? = null): HandledError {
+    fun handleActionError(
+        actionType: String,
+        error: String,
+        exception: Throwable? = null,
+        language: String = "cn",
+    ): HandledError {
         Logger.e(TAG, "Action error [$actionType]: $error", exception ?: Exception(error))
 
         return HandledError(
             category = ErrorCategory.ACTION,
-            userMessage = "操作执行失败: $actionType",
+            userMessage = I18n.getFormattedMessage("action_failed_format", language, actionType),
             technicalMessage = error,
             isRetryable = true,
             originalException = exception,
@@ -147,20 +149,21 @@ object ErrorHandler {
      * @param error Error message describing what went wrong
      * @param isSensitive Whether the error is due to sensitive screen detection
      * @param exception Optional exception that caused the error
+     * @param language Language code: "cn" for Chinese, "en" for English
      * @return HandledError with appropriate user and technical messages
-     *
      */
     fun handleScreenshotError(
         error: String,
         isSensitive: Boolean = false,
         exception: Throwable? = null,
+        language: String = "cn",
     ): HandledError {
         Logger.e(TAG, "Screenshot error: $error", exception ?: Exception(error))
 
         return if (isSensitive) {
             HandledError(
                 category = ErrorCategory.SCREENSHOT,
-                userMessage = "当前屏幕受保护，无法截图",
+                userMessage = I18n.getMessage("screen_protected", language),
                 technicalMessage = "Sensitive screen detected",
                 isRetryable = false,
                 originalException = exception,
@@ -168,7 +171,7 @@ object ErrorHandler {
         } else {
             HandledError(
                 category = ErrorCategory.SCREENSHOT,
-                userMessage = "截图失败，请重试",
+                userMessage = I18n.getMessage("screenshot_failed", language),
                 technicalMessage = error,
                 isRetryable = true,
                 originalException = exception,
@@ -181,15 +184,19 @@ object ErrorHandler {
      *
      * @param permission Permission that is missing or denied
      * @param exception Optional exception that caused the error
+     * @param language Language code: "cn" for Chinese, "en" for English
      * @return HandledError with appropriate user and technical messages
-     *
      */
-    fun handlePermissionError(permission: String, exception: Throwable? = null): HandledError {
+    fun handlePermissionError(
+        permission: String,
+        exception: Throwable? = null,
+        language: String = "cn",
+    ): HandledError {
         Logger.e(TAG, "Permission error: $permission", exception ?: Exception("Missing permission: $permission"))
 
         return HandledError(
             category = ErrorCategory.PERMISSION,
-            userMessage = "缺少必要权限: $permission",
+            userMessage = I18n.getFormattedMessage("missing_permission_format", language, permission),
             technicalMessage = "Missing permission: $permission",
             isRetryable = false,
             originalException = exception,
@@ -201,15 +208,19 @@ object ErrorHandler {
      *
      * @param error Error message describing the Shizuku issue
      * @param exception Optional exception that caused the error
+     * @param language Language code: "cn" for Chinese, "en" for English
      * @return HandledError with appropriate user and technical messages
-     *
      */
-    fun handleShizukuError(error: String, exception: Throwable? = null): HandledError {
+    fun handleShizukuError(
+        error: String,
+        exception: Throwable? = null,
+        language: String = "cn",
+    ): HandledError {
         Logger.e(TAG, "Shizuku error: $error", exception ?: Exception(error))
 
         return HandledError(
             category = ErrorCategory.PERMISSION,
-            userMessage = "Shizuku 服务不可用，请确保 Shizuku 已启动并授权",
+            userMessage = I18n.getMessage("shizuku_unavailable", language),
             technicalMessage = error,
             isRetryable = true,
             originalException = exception,
@@ -222,10 +233,15 @@ object ErrorHandler {
      * @param input Input that failed to parse (will be truncated in logs)
      * @param error Error message describing the parsing failure
      * @param exception Optional exception that caused the error
+     * @param language Language code: "cn" for Chinese, "en" for English
      * @return HandledError with appropriate user and technical messages
-     *
      */
-    fun handleParsingError(input: String, error: String, exception: Throwable? = null): HandledError {
+    fun handleParsingError(
+        input: String,
+        error: String,
+        exception: Throwable? = null,
+        language: String = "cn",
+    ): HandledError {
         Logger.e(
             TAG,
             "Parsing error: $error, input: ${input.take(MAX_INPUT_LOG_LENGTH)}",
@@ -234,7 +250,7 @@ object ErrorHandler {
 
         return HandledError(
             category = ErrorCategory.PARSING,
-            userMessage = "无法解析模型响应",
+            userMessage = I18n.getMessage("parse_model_failed", language),
             technicalMessage = "Parse error: $error",
             isRetryable = false,
             originalException = exception,
@@ -246,15 +262,19 @@ object ErrorHandler {
      *
      * @param setting Setting name that is invalid or missing
      * @param error Error message describing the configuration issue
+     * @param language Language code: "cn" for Chinese, "en" for English
      * @return HandledError with appropriate user and technical messages
-     *
      */
-    fun handleConfigurationError(setting: String, error: String): HandledError {
+    fun handleConfigurationError(
+        setting: String,
+        error: String,
+        language: String = "cn",
+    ): HandledError {
         Logger.e(TAG, "Configuration error [$setting]: $error")
 
         return HandledError(
             category = ErrorCategory.CONFIGURATION,
-            userMessage = "配置错误: $setting",
+            userMessage = I18n.getFormattedMessage("config_error_format", language, setting),
             technicalMessage = error,
             isRetryable = false,
         )
@@ -265,15 +285,19 @@ object ErrorHandler {
      *
      * @param error Error message describing what went wrong
      * @param exception Optional exception that caused the error
+     * @param language Language code: "cn" for Chinese, "en" for English
      * @return HandledError with appropriate user and technical messages
-     *
      */
-    fun handleUnknownError(error: String, exception: Throwable? = null): HandledError {
+    fun handleUnknownError(
+        error: String,
+        exception: Throwable? = null,
+        language: String = "cn",
+    ): HandledError {
         Logger.e(TAG, "Unknown error: $error", exception ?: Exception(error))
 
         return HandledError(
             category = ErrorCategory.UNKNOWN,
-            userMessage = "发生未知错误，请重试",
+            userMessage = I18n.getMessage("unknown_error_retry", language),
             technicalMessage = error,
             isRetryable = true,
             originalException = exception,
@@ -284,15 +308,15 @@ object ErrorHandler {
      * Handles an app not found error.
      *
      * @param appName Name of the app that wasn't found
+     * @param language Language code: "cn" for Chinese, "en" for English
      * @return HandledError with appropriate user and technical messages
-     *
      */
-    fun handleAppNotFoundError(appName: String): HandledError {
+    fun handleAppNotFoundError(appName: String, language: String = "cn"): HandledError {
         Logger.w(TAG, "App not found: $appName")
 
         return HandledError(
             category = ErrorCategory.ACTION,
-            userMessage = "找不到应用: $appName",
+            userMessage = I18n.getFormattedMessage("app_not_found_format", language, appName),
             technicalMessage = "App not found: $appName",
             isRetryable = false,
         )
@@ -302,13 +326,13 @@ object ErrorHandler {
      * Formats an error for user display.
      *
      * @param error The handled error to format
+     * @param language Language code: "cn" for Chinese, "en" for English
      * @return Formatted error message suitable for UI display
-     *
      */
-    fun formatErrorForDisplay(error: HandledError): String = buildString {
+    fun formatErrorForDisplay(error: HandledError, language: String = "cn"): String = buildString {
         append(error.userMessage)
         if (error.isRetryable) {
-            append(" (可重试)")
+            append(I18n.getMessage("retryable_suffix", language))
         }
     }
 
@@ -317,7 +341,6 @@ object ErrorHandler {
      *
      * @param error The handled error to format
      * @return Formatted error message suitable for log output
-     *
      */
     fun formatErrorForLog(error: HandledError): String = buildString {
         append("[${error.category}] ")

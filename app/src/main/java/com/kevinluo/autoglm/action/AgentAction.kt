@@ -158,29 +158,33 @@ sealed class AgentAction {
     /**
      * Formats the action for display in UI.
      *
+     * @param language Language code: "cn" for Chinese, "en" for English
      * @return Human-readable description of the action
      */
-    fun formatForDisplay(): String = when (this) {
-        is Tap -> "点击 ($x, $y)"
-        is Swipe -> "滑动 从($startX, $startY) 到($endX, $endY)"
-        is Type -> "输入: \"${text.take(30)}${if (text.length > 30) "..." else ""}\""
-        is TypeName -> "输入名称: \"$text\""
-        is Launch -> "启动: $app"
-        is ListApps -> "列出已安装应用"
-        is Back -> "返回"
-        is Home -> "主页"
-        is VolumeUp -> "音量+"
-        is VolumeDown -> "音量-"
-        is Power -> "电源键"
-        is LongPress -> "长按 ($x, $y)"
-        is DoubleTap -> "双击 ($x, $y)"
-        is Wait -> "等待 ${durationSeconds}秒"
-        is TakeOver -> "手动接管"
-        is Interact -> "用户交互"
-        is Note -> "备注: ${message.take(30)}${if (message.length > 30) "..." else ""}"
-        is CallApi -> "API调用"
-        is Finish -> "完成: ${message.take(30)}${if (message.length > 30) "..." else ""}"
-        is Batch -> "批量操作: ${steps.size}步 (间隔${delayMs}ms)"
+    fun formatForDisplay(language: String = "cn"): String {
+        val isEn = language.lowercase().let { it == "en" || it == "english" }
+        return when (this) {
+            is Tap -> if (isEn) "Tap ($x, $y)" else "点击 ($x, $y)"
+            is Swipe -> if (isEn) "Swipe from ($startX, $startY) to ($endX, $endY)" else "滑动 从($startX, $startY) 到($endX, $endY)"
+            is Type -> if (isEn) "Type: \"${text.take(30)}${if (text.length > 30) "..." else ""}\"" else "输入: \"${text.take(30)}${if (text.length > 30) "..." else ""}\""
+            is TypeName -> if (isEn) "Type Name: \"$text\"" else "输入名称: \"$text\""
+            is Launch -> if (isEn) "Launch: $app" else "启动: $app"
+            is ListApps -> if (isEn) "List installed apps" else "列出已安装应用"
+            is Back -> if (isEn) "Back" else "返回"
+            is Home -> if (isEn) "Home" else "主页"
+            is VolumeUp -> if (isEn) "Volume Up" else "音量+"
+            is VolumeDown -> if (isEn) "Volume Down" else "音量-"
+            is Power -> if (isEn) "Power" else "电源键"
+            is LongPress -> if (isEn) "Long press ($x, $y)" else "长按 ($x, $y)"
+            is DoubleTap -> if (isEn) "Double tap ($x, $y)" else "双击 ($x, $y)"
+            is Wait -> if (isEn) "Wait ${durationSeconds}s" else "等待 ${durationSeconds}秒"
+            is TakeOver -> if (isEn) "Manual takeover" else "手动接管"
+            is Interact -> if (isEn) "User interaction" else "用户交互"
+            is Note -> if (isEn) "Note: ${message.take(30)}${if (message.length > 30) "..." else ""}" else "备注: ${message.take(30)}${if (message.length > 30) "..." else ""}"
+            is CallApi -> if (isEn) "Call API" else "API调用"
+            is Finish -> if (isEn) "Finish: ${message.take(30)}${if (message.length > 30) "..." else ""}" else "完成: ${message.take(30)}${if (message.length > 30) "..." else ""}"
+            is Batch -> if (isEn) "Batch: ${steps.size} steps (${delayMs}ms)" else "批量操作: ${steps.size}步 (间隔${delayMs}ms)"
+        }
     }
 }
 

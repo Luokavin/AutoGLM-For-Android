@@ -173,6 +173,15 @@ class MainActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
         checkOverlayPermission()
+        checkShizukuState()
+    }
+
+    private fun checkShizukuState() {
+        if (Shizuku.pingBinder()) {
+            checkShizukuPermission()
+        } else {
+            viewModel.updateShizukuStatus(ShizukuStatus.NOT_RUNNING)
+        }
     }
 
     override fun onDestroy() {

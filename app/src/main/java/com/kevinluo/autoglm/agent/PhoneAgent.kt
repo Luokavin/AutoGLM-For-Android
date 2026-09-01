@@ -138,6 +138,18 @@ class PhoneAgent(
         }
 
     /**
+     * Gets the pause message based on language setting.
+     *
+     * @return Localized pause message
+     */
+    private fun getPauseMessage(): String =
+        if (config.language.lowercase() == "en" || config.language.lowercase() == "english") {
+            PAUSE_MESSAGE_EN
+        } else {
+            PAUSE_MESSAGE
+        }
+
+    /**
      * Sets the listener for agent events.
      *
      * @param listener The listener to receive agent events, or null to remove
@@ -414,7 +426,7 @@ class PhoneAgent(
                 )
             }
 
-            val handledError = ErrorHandler.handleUnknownError("Task execution error", e)
+            val handledError = ErrorHandler.handleUnknownError("Task execution error", e, language = config.language)
             Logger.e(TAG, ErrorHandler.formatErrorForLog(handledError), e)
             if (!historyCompleted) {
                 historyManager?.completeTask(false, handledError.userMessage)
@@ -501,7 +513,7 @@ class PhoneAgent(
                     finished = false,
                     action = null,
                     thinking = "",
-                    message = PAUSE_MESSAGE,
+                    message = getPauseMessage(),
                     paused = true,
                 )
             }
@@ -534,7 +546,7 @@ class PhoneAgent(
                     finished = false,
                     action = null,
                     thinking = "",
-                    message = PAUSE_MESSAGE,
+                    message = getPauseMessage(),
                     paused = true,
                 )
             }
@@ -543,11 +555,12 @@ class PhoneAgent(
             historyManager?.setCurrentScreenshot(screenshot.base64Data, screenshot.width, screenshot.height)
 
             // Build user message
+            val isEn = config.language.lowercase().let { it == "en" || it == "english" }
             val userText =
                 when {
-                    task != null -> "任务: $task\n当前屏幕截图如下:"
-                    hint != null -> "上一步执行结果: $hint\n继续执行任务，当前屏幕截图如下:"
-                    else -> "继续执行任务，当前屏幕截图如下:"
+                    task != null -> if (isEn) "Task: $task\nCurrent screenshot is as follows:" else "任务: $task\n当前屏幕截图如下:"
+                    hint != null -> if (isEn) "Previous step result: $hint\nContinuing task, current screenshot is as follows:" else "上一步执行结果: $hint\n继续执行任务，当前屏幕截图如下:"
+                    else -> if (isEn) "Continuing task, current screenshot is as follows:" else "继续执行任务，当前屏幕截图如下:"
                 }
 
             // Add user message to context (screenshot is passed separately to model)
@@ -581,7 +594,7 @@ class PhoneAgent(
                     finished = false,
                     action = null,
                     thinking = "",
-                    message = PAUSE_MESSAGE,
+                    message = getPauseMessage(),
                     paused = true,
                 )
             }
@@ -617,7 +630,7 @@ class PhoneAgent(
                             finished = false,
                             action = null,
                             thinking = response.thinking,
-                            message = PAUSE_MESSAGE,
+                            message = getPauseMessage(),
                             paused = true,
                         )
                     }
@@ -644,26 +657,28 @@ class PhoneAgent(
                                 finished = false,
                                 action = null,
                                 thinking = retryResult?.thinking ?: response.thinking,
-                                message = PAUSE_MESSAGE,
+                                message = getPauseMessage(),
                                 paused = true,
                             )
                         }
 
                         if (retryResult == null) {
+                            val noActionDesc = if (isEn) "No action" else "无操作"
+                            val noActionMsg = if (isEn) "No action in model response (retried ${MAX_EMPTY_ACTION_RETRIES} times)" else "模型响应中没有操作（已重试${MAX_EMPTY_ACTION_RETRIES}次）"
                             historyManager?.recordStep(
                                 stepNumber = currentStepNumber,
                                 thinking = response.thinking,
                                 action = null,
-                                actionDescription = "无操作",
+                                actionDescription = noActionDesc,
                                 success = false,
-                                message = "模型响应中没有操作（已重试${MAX_EMPTY_ACTION_RETRIES}次）",
+                                message = noActionMsg,
                             )
                             return StepResult(
                                 success = false,
                                 finished = false,
                                 action = null,
                                 thinking = response.thinking,
-                                message = "模型响应中没有操作（已重试${MAX_EMPTY_ACTION_RETRIES}次）",
+                                message = noActionMsg,
                             )
                         }
 
@@ -709,19 +724,19 @@ class PhoneAgent(
                             finished = false,
                             action = null,
                             thinking = "",
-                            message = PAUSE_MESSAGE,
+                            message = getPauseMessage(),
                             paused = true,
                         )
                     }
 
-                    val handledError = ErrorHandler.handleNetworkError(modelResult.error)
+                    val handledError = ErrorHandler.handleNetworkError(modelResult.error, language = config.language)
                     Logger.e(TAG, ErrorHandler.formatErrorForLog(handledError))
                     // Record failed step
                     historyManager?.recordStep(
                         stepNumber = currentStepNumber,
                         thinking = "",
                         action = null,
-                        actionDescription = "模型错误",
+                        actionDescription = if (isEn) "Model error" else "模型错误",
                         success = false,
                         message = handledError.userMessage,
                     )
@@ -766,12 +781,12 @@ class PhoneAgent(
                     finished = false,
                     action = null,
                     thinking = "",
-                    message = PAUSE_MESSAGE,
+                    message = getPauseMessage(),
                     paused = true,
                 )
             }
 
-            val handledError = ErrorHandler.handleUnknownError("Step execution error", e)
+            val handledError = ErrorHandler.handleUnknownError("Step execution error", e, language = config.language)
             Logger.e(TAG, ErrorHandler.formatErrorForLog(handledError), e)
             return StepResult(
                 success = false,
@@ -977,11 +992,13 @@ class PhoneAgent(
         val correctionHint = buildCoordinateCorrectionHint(e, config.language)
 
         // Record failed step
+        val isEn = config.language.lowercase().let { it == "en" || it == "english" }
+        val actionDesc = if (isEn) "Coordinate out of bounds: ${e.originalAction}" else "坐标越界: ${e.originalAction}"
         historyManager?.recordStep(
             stepNumber = currentStepNumber,
             thinking = thinking,
             action = null,
-            actionDescription = "坐标越界: ${e.originalAction}",
+            actionDescription = actionDesc,
             success = false,
             message = correctionHint,
         )
@@ -996,14 +1013,16 @@ class PhoneAgent(
             nextStepHint = correctionHint,
         )
     } catch (e: ActionParseException) {
-        val handledError = ErrorHandler.handleParsingError(actionStr, e.message ?: "Unknown parse error", e)
+        val handledError = ErrorHandler.handleParsingError(actionStr, e.message ?: "Unknown parse error", e, language = config.language)
         Logger.e(TAG, ErrorHandler.formatErrorForLog(handledError), e)
+        val isEn = config.language.lowercase().let { it == "en" || it == "english" }
+        val parseDesc = if (isEn) "Parse error: $actionStr" else "解析错误: $actionStr"
         // Record failed step
         historyManager?.recordStep(
             stepNumber = currentStepNumber,
             thinking = thinking,
             action = null,
-            actionDescription = "解析错误: $actionStr",
+            actionDescription = parseDesc,
             success = false,
             message = handledError.userMessage,
         )

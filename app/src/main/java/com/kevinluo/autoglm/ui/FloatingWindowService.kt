@@ -398,11 +398,13 @@ class FloatingWindowService :
      */
     fun addStep(stepNumber: Int, thinking: String, action: AgentAction?) {
         serviceScope.launch {
+            val lang = com.kevinluo.autoglm.settings.SettingsManager.getInstance(this@FloatingWindowService).getAgentConfig().language
+            val noActionText = com.kevinluo.autoglm.config.I18n.getMessage("no_action", lang)
             val step =
                 FloatingStep(
                     stepNumber = stepNumber,
                     thinking = thinking,
-                    action = action?.formatForDisplay() ?: "无",
+                    action = action?.formatForDisplay(lang) ?: noActionText,
                 )
             stepsList.add(step)
             stepsAdapter?.notifyItemInserted(stepsList.size - 1)
@@ -899,6 +901,10 @@ class FloatingWindowService :
 
         startBtn?.setOnClickListener {
             val task = taskInput?.text?.toString()?.trim() ?: ""
+            if (task.isBlank()) {
+                Toast.makeText(this, R.string.toast_task_empty, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             if (task.isNotBlank()) {
                 // Check if we can start a task and get specific reason if not
                 val blockReason = TaskExecutionManager.getStartTaskBlockReason()

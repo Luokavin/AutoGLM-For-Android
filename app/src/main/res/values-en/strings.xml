@@ -1,0 +1,328 @@
+<resources>
+    <string name="app_name">AutoGLM For Android</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_history">History</string>
+    <string name="nav_settings">Settings</string>
+    
+    <!-- Permissions Center -->
+    <string name="permissions_center_title">Permissions Status</string>
+    <string name="permissions_summary_default">Checking...</string>
+    <string name="permissions_summary_all_granted">All Granted</string>
+    <string name="permissions_summary_partial">%1$d/%2$d Granted</string>
+    <string name="permission_action_grant">Grant</string>
+    <string name="permission_action_enable">Enable</string>
+    <string name="permission_granted">Granted</string>
+    <string name="permission_not_granted">Not Granted</string>
+    
+    <!-- Shizuku Status -->
+    <string name="shizuku_status_title">Shizuku Status</string>
+    <string name="shizuku_status_unknown">Unknown</string>
+    <string name="shizuku_status_not_running">Not Running</string>
+    <string name="shizuku_status_no_permission">Running, Not Authorized</string>
+    <string name="shizuku_status_connecting">Connecting...</string>
+    <string name="shizuku_status_connected">Connected</string>
+    <string name="request_shizuku_permission">Authorize</string>
+    <string name="open_shizuku">Open Shizuku</string>
+    
+    <!-- Overlay Permission -->
+    <string name="overlay_permission_title">Floating Window</string>
+    <string name="overlay_permission_granted">Granted</string>
+    <string name="overlay_permission_denied">Not Granted</string>
+    <string name="request_overlay_permission">Authorize</string>
+    
+    <!-- Battery Optimization -->
+    <string name="battery_opt_title">Battery Optimization</string>
+    <string name="battery_opt_ignored">Ignored</string>
+    <string name="battery_opt_not_ignored">Not Ignored</string>
+    <string name="battery_opt_request">Settings</string>
+    <string name="battery_opt_description">Ignoring battery optimization helps background tasks run reliably.</string>
+    
+    <!-- AutoGLM Keyboard -->
+    <string name="keyboard_title">Keyboard IME</string>
+    <string name="keyboard_enabled">Enabled</string>
+    <string name="keyboard_not_enabled">Disabled</string>
+    <string name="enable_keyboard">Enable</string>
+    <string name="toast_keyboard_required">AutoGLM Keyboard must be enabled for text input</string>
+    
+    <!-- Task Section -->
+    <string name="task_section_label">Task Input</string>
+    <string name="task_input_hint">Describe the task you want to execute...</string>
+    <string name="start_task">Start</string>
+    <string name="cancel_task">Stop</string>
+    
+    <!-- Task Status -->
+    <string name="task_status_label">Status</string>
+    <string name="task_status_idle">Idle</string>
+    <string name="task_status_running">Running</string>
+    <string name="task_status_paused">Paused</string>
+    <string name="task_status_completed">Completed</string>
+    <string name="task_status_failed">Failed</string>
+    <string name="task_status_cancelled">Cancelled</string>
+    <string name="step_counter_default">Steps: 0</string>
+    <string name="step_counter_format">Steps: %d</string>
+    <string name="pause_task">Pause</string>
+    <string name="resume_task">Resume</string>
+    
+    <!-- Output Section -->
+    <string name="output_section_label">Execution Logs</string>
+    <string name="output_description">View detailed task execution logs</string>
+    <string name="output_placeholder">Logs will appear here...</string>
+    
+    <!-- Toast Messages -->
+    <string name="toast_shizuku_not_running">Please start Shizuku first</string>
+    <string name="toast_shizuku_version_low">Shizuku version is too low</string>
+    <string name="toast_shizuku_permission_granted">Permission granted</string>
+    <string name="toast_shizuku_permission_denied">Permission denied</string>
+    <string name="toast_shizuku_already_granted">Permission already granted</string>
+    <string name="toast_shizuku_grant_in_app">Please grant permission in Shizuku</string>
+    <string name="toast_user_service_connected">Service connected</string>
+    <string name="toast_user_service_disconnected">Service disconnected</string>
+    <string name="toast_task_empty">Please enter a task description</string>
+    <string name="toast_task_started">Task started</string>
+    <string name="toast_task_cancelled">Task cancelled</string>
+    <string name="toast_overlay_permission_required">Floating window permission required</string>
+    <string name="toast_task_already_running">A task is already running</string>
+    <string name="toast_phone_agent_not_ready">Agent not ready, please try again shortly</string>
+    
+    <!-- Settings Activity -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_model_section">Model Configuration</string>
+    <string name="settings_model_description">Configure API connection parameters</string>
+    <string name="settings_agent_section">Agent Configuration</string>
+    <string name="settings_agent_description">Configure task execution parameters</string>
+    <string name="settings_base_url">API Base URL</string>
+    <string name="settings_model_name">Model Name</string>
+    <string name="settings_api_key">API Key</string>
+    <string name="settings_max_steps">Max Steps</string>
+    <string name="settings_max_steps_hint">Set to 0 for unlimited steps</string>
+    <string name="settings_screenshot_delay">Screenshot Delay (s)</string>
+    <string name="settings_screenshot_delay_hint">Wait time for page to load after executing an action</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_chinese">中文</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_reset">Reset</string>
+    <string name="settings_saved">Settings saved</string>
+    <string name="settings_reset_done">Reset completed</string>
+    <string name="settings_validation_error_url">Please enter a valid URL</string>
+    <string name="settings_validation_error_model">Please enter a model name</string>
+    <string name="settings_validation_error_steps">Steps cannot be negative</string>
+    <string name="settings_validation_error_delay">Delay cannot be negative</string>
+    <string name="settings_saved_profiles">Saved Profiles</string>
+    <string name="settings_save_profile">Save Profile</string>
+    <string name="settings_copy_profile">Copy Profile</string>
+    <string name="settings_delete_profile">Delete Profile</string>
+    <string name="settings_profile_menu">Profile Menu</string>
+    <string name="settings_new_profile">New Profile</string>
+    <string name="settings_profile_name_hint">Profile Name</string>
+    <string name="settings_profile_saved">Profile saved</string>
+    <string name="settings_profile_copied">Profile copied</string>
+    <string name="settings_profile_deleted">Profile deleted</string>
+    <string name="settings_profile_name_empty">Please enter a profile name</string>
+    <string name="settings_delete_profile_confirm">Are you sure you want to delete this profile?</string>
+    <string name="settings_copy_profile_name">%s (Copy)</string>
+    <string name="settings_test_connection">Test Connection</string>
+    <string name="settings_testing">Testing...</string>
+    <string name="settings_test_success">Connected successfully! Latency: %dms</string>
+    <string name="settings_test_auth_error">Authentication failed: %s</string>
+    <string name="settings_test_model_not_found">Model error: %s</string>
+    <string name="settings_test_server_error" formatted="false">Server error (%d): %s</string>
+    <string name="settings_test_connection_error">Connection failed: %s</string>
+    <string name="settings_test_timeout">Connection timed out: %s</string>
+    <string name="settings_test_invalid_config">Please fill in all configuration fields first</string>
+    
+    <!-- Task Templates -->
+    <string name="settings_task_templates">Task Templates</string>
+    <string name="settings_task_templates_description">Save frequently used tasks for quick input</string>
+    <string name="settings_add_template">Add Template</string>
+    <string name="settings_edit_template">Edit Template</string>
+    <string name="settings_delete_template">Delete Template</string>
+    <string name="settings_template_name">Template Name</string>
+    <string name="settings_template_description">Task Description</string>
+    <string name="settings_template_saved">Template saved</string>
+    <string name="settings_template_deleted">Template deleted</string>
+    <string name="settings_template_name_empty">Please enter a template name</string>
+    <string name="settings_template_desc_empty">Please enter a task description</string>
+    <string name="settings_delete_template_confirm">Are you sure you want to delete this template?</string>
+    <string name="settings_no_templates">No templates yet</string>
+    <string name="task_select_template">Select Template</string>
+    
+    <!-- Advanced Settings -->
+    <string name="settings_advanced">Advanced Settings</string>
+    <string name="settings_advanced_description">Customize system prompts</string>
+    <string name="settings_system_prompt">System Prompt</string>
+    <string name="settings_system_prompt_warning">This is an advanced feature. Modifying system prompts may affect Agent behavior. If unsure, please keep default settings.\n\nTip: Use {date} as date placeholder, it will be automatically replaced with the current date at runtime.</string>
+    <string name="settings_system_prompt_cn">Chinese Prompt</string>
+    <string name="settings_system_prompt_en">English Prompt</string>
+    <string name="settings_system_prompt_edit">Edit Prompt</string>
+    <string name="settings_system_prompt_reset">Reset to Default</string>
+    <string name="settings_system_prompt_reset_confirm">Are you sure you want to reset to the default prompt?</string>
+    <string name="settings_system_prompt_saved">Prompt saved</string>
+    <string name="settings_system_prompt_reset_done">Reset to default prompt</string>
+    <string name="settings_system_prompt_custom">Customized</string>
+    <string name="settings_system_prompt_default">Default</string>
+    
+    <!-- Dialog Strings -->
+    <string name="dialog_confirm_title">Confirm Action</string>
+    <string name="dialog_confirm_message">Are you sure you want to perform this action?</string>
+    <string name="dialog_confirm">Confirm</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_choose_option">Choose Option</string>
+    <string name="dialog_select_option">Please select one of the following options</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- Takeover Prompt -->
+    <string name="takeover_title">Manual Action Required</string>
+    <string name="takeover_message">Please complete the following actions</string>
+    <string name="takeover_instructions_placeholder">Instructions will appear here</string>
+    <string name="takeover_continue">Done, Continue</string>
+    
+    <!-- Floating Window -->
+    <string name="floating_thinking_label">Thinking</string>
+    <string name="floating_action_label">Action</string>
+    <string name="floating_waiting">Waiting for task...</string>
+    <string name="floating_action_none">None</string>
+    <string name="floating_minimize">Minimize</string>
+    <string name="floating_open_app">Open App</string>
+    <string name="floating_waiting_confirm">Waiting for Confirmation</string>
+    <string name="floating_open">Open Floating Window</string>
+    <string name="floating_new_task">New Task</string>
+    <string name="floating_thinking">Thinking...</string>
+    
+    <!-- Quick Actions -->
+    <string name="quick_action_floating">Floating Window</string>
+    <string name="quick_action_history">History</string>
+    
+    <!-- Quick Settings Tile -->
+    <string name="tile_floating_window">AutoGLM</string>
+    <string name="tile_floating_window_desc">Show/Hide Floating Window</string>
+    
+    <!-- Foreground Service Notifications -->
+    <string name="notification_service_running">Service is running</string>
+    <string name="notification_task_running">Task executing...</string>
+    <string name="notification_task_paused">Task paused</string>
+    <string name="notification_task_completed">Task completed</string>
+    <string name="notification_task_failed">Task execution failed</string>
+    <string name="notification_waiting_confirm">Waiting for user confirmation</string>
+    <string name="notification_waiting_takeover">Manual takeover required</string>
+    
+    <!-- History -->
+    <string name="history_title">History</string>
+    <string name="history_detail_title">Task Details</string>
+    <string name="history_empty">No history records</string>
+    <string name="history_steps_format">%d steps</string>
+    <string name="history_duration_format">Duration: %s</string>
+    <string name="history_success">Success</string>
+    <string name="history_failed">Failed</string>
+    <string name="history_thinking_label">Reasoning Process</string>
+    <string name="history_original">Original</string>
+    <string name="history_annotated">Annotated</string>
+    <string name="history_clear_all">Clear History</string>
+    <string name="history_clear_confirm">Are you sure you want to clear all history records?</string>
+    <string name="history_delete_confirm">Are you sure you want to delete this record?</string>
+    <string name="history_cleared">History cleared</string>
+    <string name="history_deleted">Record deleted</string>
+    <string name="history_selected_count">Selected %d items</string>
+    <string name="history_select_all">Select All</string>
+    <string name="history_delete_selected">Delete Selected</string>
+    <string name="history_delete_selected_confirm">Are you sure you want to delete the selected %d records?</string>
+    <string name="history_share">Share</string>
+    <string name="history_share_title">Share Task Record</string>
+    <string name="history_save_image">Save Image</string>
+    <string name="history_generating_image">Generating image...</string>
+    <string name="history_share_failed">Share failed</string>
+    <string name="history_save_success">Image saved to gallery</string>
+    <string name="history_save_failed">Failed to save image</string>
+    <string name="history_copy_prompt">Copy Prompt</string>
+    <string name="history_prompt_copied">Prompt copied to clipboard</string>
+    <string name="history_load_more">Load More</string>
+    <string name="history_load_more_count">Load More (%d steps remaining)</string>
+    
+    <!-- Debug Logs -->
+    <string name="settings_debug_logs">Debug Logs</string>
+    <string name="settings_debug_logs_description">Export logs for troubleshooting</string>
+    <string name="settings_debug_logs_size">Log Size: %s</string>
+    <string name="settings_export_logs">Export Logs</string>
+    <string name="settings_clear_logs">Clear</string>
+    <string name="settings_logs_cleared">Logs cleared</string>
+    <string name="settings_logs_export_failed">Export failed</string>
+    <string name="settings_logs_empty">No logs available</string>
+    <string name="settings_clear_logs_confirm">Are you sure you want to clear all logs?</string>
+    
+    <!-- AutoGLM Keyboard -->
+    <string name="keyboard_name">AutoGLM Keyboard</string>
+    <string name="keyboard_status_ready">Ready</string>
+    <string name="keyboard_hint">Text input controlled by AutoGLM</string>
+    <string name="keyboard_settings_title">AutoGLM Keyboard</string>
+    <string name="keyboard_settings_subtitle">Enabled</string>
+    <string name="keyboard_switch">Switch Keyboard</string>
+
+    <!-- Voice Input -->
+    <string name="voice_input_title">Voice Input</string>
+    <string name="voice_settings_title">Voice Input</string>
+    <string name="voice_settings_description">Configure speech recognition and wake words</string>
+    <string name="voice_model_status">Model Status</string>
+    <string name="voice_model_not_downloaded">Not Downloaded</string>
+    <string name="voice_model_downloaded">Downloaded (%1$d MB)</string>
+    <string name="voice_download_model">Download Model</string>
+    <string name="voice_delete_model">Delete Model</string>
+    <string name="voice_sensitivity">Wake Word Sensitivity</string>
+    <string name="voice_sensitivity_low">Low</string>
+    <string name="voice_sensitivity_high">High</string>
+    <string name="voice_wake_word_helper">Separate multiple wake words with commas</string>
+    <string name="voice_download_confirm_title">Download Voice Model</string>
+    <string name="voice_download_confirm_message">Speech recognition requires downloading an offline model. The model supports Chinese and English recognition.</string>
+    <string name="voice_download_size_hint">Model size is ~85MB. Downloading over Wi-Fi is recommended.</string>
+    <string name="voice_downloading_title">Downloading Voice Model</string>
+    <string name="voice_downloading_progress">%1$d%%</string>
+    <string name="voice_download_status_preparing">Preparing download...</string>
+    <string name="voice_download_status_downloading">Downloading VAD model...</string>
+    <string name="voice_download_status_downloading_asr">Downloading ASR model...</string>
+    <string name="voice_download_status_extracting">Extracting model...</string>
+    <string name="voice_download_complete">Download complete</string>
+    <string name="voice_download_failed">Download failed: %1$s</string>
+    <string name="voice_download_cancelled">Download cancelled</string>
+    <string name="voice_continuous_listening">Background Listening</string>
+    <string name="voice_continuous_listening_desc">Listen continuously in the background to quickly launch tasks via wake words</string>
+    <string name="voice_listening_active">Listening for voice...</string>
+    <string name="voice_wake_word">Wake Word</string>
+    <string name="voice_wake_word_hint">Separate multiple wake words with commas</string>
+    <string name="voice_wake_word_default">Hey AutoGLM</string>
+    <string name="voice_wake_sensitivity">Wake Word Sensitivity</string>
+    <string name="voice_listening">Listening...</string>
+    <string name="voice_recognizing">Recognizing...</string>
+    <string name="voice_permission_required">Microphone permission required for voice input</string>
+    <string name="voice_permission_denied">Microphone permission denied</string>
+    <string name="voice_model_required">Please download the voice model first</string>
+    <string name="voice_notification_permission_required">Notification permission required for background voice service</string>
+    <string name="voice_audio_permission_required">Microphone permission required for voice listening</string>
+    <string name="voice_listening_started">Background voice listening started</string>
+    <string name="voice_delete_confirm_title">Delete Voice Model</string>
+    <string name="voice_delete_confirm_message">Are you sure you want to delete the voice model? You will need to download it again to use voice input.</string>
+    <string name="voice_delete_success">Voice model deleted</string>
+    <string name="voice_wake_word_detected">Wake word detected: %1$s</string>
+    
+    <!-- Voice Status Messages -->
+    <string name="voice_recording_hint">Listening, please speak...</string>
+    <string name="voice_recognizing_hint">Recognizing speech...</string>
+    <string name="voice_no_speech_detected">No speech detected, please try again</string>
+    <string name="voice_result_hint">Recognition complete, executing soon</string>
+    <string name="voice_stop_recording">Stop Recording</string>
+    <string name="voice_auto_run_countdown">Auto-running in %d seconds</string>
+    <string name="voice_cancel_auto_run">Cancel</string>
+    <string name="voice_confirm_with_countdown">Confirm (%d)</string>
+    <string name="voice_confirm">Confirm</string>
+    <string name="voice_retry">Retry</string>
+    
+    <!-- Voice Error Messages -->
+    <string name="voice_model_load_failed">Failed to load voice model</string>
+    <string name="voice_recording_failed">Voice input failed</string>
+    <string name="voice_recognition_failed">Voice recognition failed</string>
+    <string name="voice_network_error">Network error</string>
+    <string name="voice_unknown_error">Unknown error</string>
+    <string name="voice_downloading">Downloading...</string>
+    <string name="voice_download_progress">Download progress: %1$d MB / %2$d MB</string>
+    <string name="voice_download_confirm">Download Confirmation</string>
+</resources>
