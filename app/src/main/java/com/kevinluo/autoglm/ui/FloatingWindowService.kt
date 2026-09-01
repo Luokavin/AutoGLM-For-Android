@@ -398,11 +398,13 @@ class FloatingWindowService :
      */
     fun addStep(stepNumber: Int, thinking: String, action: AgentAction?) {
         serviceScope.launch {
+            val lang = com.kevinluo.autoglm.settings.SettingsManager.getInstance(this@FloatingWindowService).getAgentConfig().language
+            val noActionText = com.kevinluo.autoglm.config.I18n.getMessage("no_action", lang)
             val step =
                 FloatingStep(
                     stepNumber = stepNumber,
                     thinking = thinking,
-                    action = action?.formatForDisplay() ?: "无",
+                    action = action?.formatForDisplay(lang) ?: noActionText,
                 )
             stepsList.add(step)
             stepsAdapter?.notifyItemInserted(stepsList.size - 1)

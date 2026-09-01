@@ -219,13 +219,14 @@ object TaskExecutionManager : PhoneAgentListener {
     fun cancelTask() {
         val componentManager = getComponentManager() ?: return
         val agent = componentManager.phoneAgent ?: return
+        val language = componentManager.settingsManager.getAgentConfig().language
 
         Logger.i(TAG, "Cancelling task")
         agent.cancel()
         _taskState.value =
             _taskState.value.copy(
                 status = TaskStatus.FAILED,
-                resultMessage = "任务已取消",
+                resultMessage = com.kevinluo.autoglm.config.I18n.getMessage("task_cancelled", language),
             )
     }
 
@@ -365,7 +366,8 @@ object TaskExecutionManager : PhoneAgentListener {
      * @param action The action that was executed
      */
     override fun onActionExecuted(action: AgentAction) {
-        val actionText = action.formatForDisplay()
+        val language = getComponentManager()?.settingsManager?.getAgentConfig()?.language ?: "cn"
+        val actionText = action.formatForDisplay(language)
         Logger.d(TAG, "Action executed: $actionText")
         _taskState.value = _taskState.value.copy(currentAction = actionText)
 

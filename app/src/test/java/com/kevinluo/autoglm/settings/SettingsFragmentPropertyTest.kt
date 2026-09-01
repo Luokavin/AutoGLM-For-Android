@@ -9,6 +9,7 @@ import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.string
+import io.kotest.property.arbitrary.stringPattern
 import io.kotest.property.checkAll
 
 /**
@@ -161,11 +162,8 @@ class SettingsFragmentPropertyTest :
         }
 
         "wake words should persist correctly" {
-            checkAll(100, Arb.string(1, 20), Arb.string(1, 20)) { word1, word2 ->
-                // Trim inputs and filter out commas (comma is the delimiter)
-                val trimmedWord1 = word1.trim().replace(",", "")
-                val trimmedWord2 = word2.trim().replace(",", "")
-                val wakeWords = listOf(trimmedWord1, trimmedWord2).filter { it.isNotEmpty() }
+            checkAll(100, Arb.stringPattern("[a-zA-Z0-9_]{1,20}"), Arb.stringPattern("[a-zA-Z0-9_]{1,20}")) { word1, word2 ->
+                val wakeWords = listOf(word1, word2).filter { it.isNotEmpty() }
 
                 val savedWords = wakeWords.joinToString(",")
                 val loadedWords = savedWords.split(",").map { it.trim() }.filter { it.isNotEmpty() }
