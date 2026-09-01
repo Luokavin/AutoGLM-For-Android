@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
+import com.kevinluo.autoglm.ComponentManager
+import com.kevinluo.autoglm.R
 import com.kevinluo.autoglm.util.Logger
 
 /**
@@ -11,7 +13,6 @@ import com.kevinluo.autoglm.util.Logger
  *
  * Provides utilities for checking AutoGLM Keyboard availability,
  * enabling the keyboard, and navigating to keyboard settings.
- *
  */
 object KeyboardHelper {
     private const val TAG = "KeyboardHelper"
@@ -45,19 +46,35 @@ object KeyboardHelper {
      * @return [KeyboardStatus] indicating the keyboard's current state
      */
     fun getAutoGLMKeyboardStatus(context: Context): KeyboardStatus {
-        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        val enabledInputMethods = imm.enabledInputMethodList
-
-        Logger.d(TAG, "Looking for keyboard: package=$PACKAGE_NAME")
-
-        for (ime in enabledInputMethods) {
-            Logger.d(TAG, "Found IME: package=${ime.packageName}, service=${ime.serviceName}")
-            if (ime.packageName == PACKAGE_NAME &&
-                ime.serviceName.endsWith(".AutoGLMKeyboardService")
-            ) {
-                Logger.d(TAG, "AutoGLM Keyboard is enabled")
-                return KeyboardStatus.ENABLED
+        try {
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            val enabledInputMethods = imm?.enabledInputMethodList
+            if (enabledInputMethods != null) {
+                for (ime in enabledInputMethods) {
+                    if (ime.packageName == PACKAGE_NAME &&
+                        ime.serviceName.endsWith(".AutoGLMKeyboardService")
+                    ) {
+                        Logger.d(TAG, "AutoGLM Keyboard is enabled (via IMM)")
+                        return KeyboardStatus.ENABLED
+                    }
+                }
             }
+        } catch (e: Exception) {
+            Logger.w(TAG, "Error checking keyboard via InputMethodManager", e)
+        }
+
+        // Shizuku fallback: check enabled IMEs via UserService if available
+        try {
+            val deviceExecutor = ComponentManager.getInstance(context).deviceExecutor
+            if (deviceExecutor != null) {
+                val output = deviceExecutor.executeCommand("ime list -s")
+                if (output.contains(IME_ID) || output.contains(PACKAGE_NAME)) {
+                    Logger.d(TAG, "AutoGLM Keyboard is enabled (via Shizuku UserService)")
+                    return KeyboardStatus.ENABLED
+                }
+            }
+        } catch (e: Exception) {
+            Logger.w(TAG, "Error checking keyboard via Shizuku fallback", e)
         }
 
         Logger.d(TAG, "AutoGLM Keyboard is not enabled")
@@ -73,14 +90,37 @@ object KeyboardHelper {
     fun isKeyboardAvailable(context: Context): Boolean = getAutoGLMKeyboardStatus(context) == KeyboardStatus.ENABLED
 
     /**
+     * Attempts to enable AutoGLM Keyboard directly using Shizuku UserService elevated privileges.
+     *
+     * @param context Application context
+     * @return true if keyboard was successfully enabled, false otherwise
+     */
+    fun enableKeyboardViaShizuku(context: Context): Boolean {
+        try {
+            val deviceExecutor = ComponentManager.getInstance(context).deviceExecutor
+            if (deviceExecutor != null) {
+                val output = deviceExecutor.executeCommand("ime enable $IME_ID")
+                Logger.d(TAG, "Enable keyboard command output: $output")
+                if (isKeyboardAvailable(context)) {
+                    Logger.i(TAG, "AutoGLM Keyboard successfully enabled via Shizuku UserService")
+                    return true
+                }
+            }
+        } catch (e: Exception) {
+            Logger.w(TAG, "Failed to enable keyboard via Shizuku", e)
+        }
+        return false
+    }
+
+    /**
      * Gets a human-readable status message for keyboard availability.
      *
      * @param context Application context
      * @return Status message describing keyboard availability
      */
     fun getKeyboardStatusMessage(context: Context): String = when (getAutoGLMKeyboardStatus(context)) {
-        KeyboardStatus.ENABLED -> "AutoGLM Keyboard 已启用"
-        KeyboardStatus.NOT_ENABLED -> "请启用 AutoGLM Keyboard"
+        KeyboardStatus.ENABLED -> context.getString(R.string.keyboard_enabled)
+        KeyboardStatus.NOT_ENABLED -> context.getString(R.string.keyboard_not_enabled)
     }
 
     /**
@@ -106,8 +146,8 @@ object KeyboardHelper {
      */
     fun showInputMethodPicker(context: Context) {
         try {
-            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.showInputMethodPicker()
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.showInputMethodPicker()
             Logger.d(TAG, "Showed input method picker")
         } catch (e: Exception) {
             Logger.e(TAG, "Failed to show input method picker", e)

@@ -321,7 +321,7 @@ class DeviceExecutor(private val userService: IUserService) {
      * @param command The shell command to execute
      * @return The command output, or an error message if execution fails
      */
-    private fun executeCommand(command: String): String = try {
+    fun executeCommand(command: String): String = try {
         userService.executeCommand(command)
     } catch (e: Exception) {
         Logger.e(TAG, "Error executing command: $command", e)

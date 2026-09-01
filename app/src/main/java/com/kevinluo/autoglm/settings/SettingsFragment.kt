@@ -37,6 +37,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.kevinluo.autoglm.R
 import com.kevinluo.autoglm.agent.AgentConfig
+import com.kevinluo.autoglm.input.KeyboardHelper
 import com.kevinluo.autoglm.model.ModelClient
 import com.kevinluo.autoglm.model.ModelConfig
 import com.kevinluo.autoglm.ui.MainViewModel
@@ -571,14 +572,8 @@ class SettingsFragment : Fragment() {
         false
     }
 
-    private fun isKeyboardEnabled(): Boolean {
-        val enabledInputMethods =
-            Settings.Secure.getString(
-                requireContext().contentResolver,
-                Settings.Secure.ENABLED_INPUT_METHODS,
-            ) ?: ""
-        return enabledInputMethods.contains(requireContext().packageName)
-    }
+    private fun isKeyboardEnabled(): Boolean =
+        KeyboardHelper.isKeyboardAvailable(requireContext())
 
     private fun isBatteryOptimizationIgnored(): Boolean {
         val pm = requireContext().getSystemService(PowerManager::class.java)
@@ -611,7 +606,12 @@ class SettingsFragment : Fragment() {
     }
 
     private fun openKeyboardSettings() {
-        startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
+        if (KeyboardHelper.enableKeyboardViaShizuku(requireContext())) {
+            refreshPermissionStates()
+            Toast.makeText(requireContext(), R.string.keyboard_enabled, Toast.LENGTH_SHORT).show()
+        } else {
+            startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
+        }
     }
 
     private fun requestBatteryOptimization() {
