@@ -10,7 +10,7 @@
     <string name="permissions_center_title">权限状态</string>
     <string name="permissions_summary_default">检查中...</string>
     <string name="permissions_summary_all_granted">全部已授权</string>
-    <string name="permissions_summary_partial">%d/%d 已授权</string>
+    <string name="permissions_summary_partial">%1$d/%2$d 已授权</string>
     <string name="permission_action_grant">授权</string>
     <string name="permission_action_enable">启用</string>
     <string name="permission_granted">已授权</string>
